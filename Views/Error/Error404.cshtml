@@ -1,0 +1,86 @@
+@{
+    ViewData["Title"] = "404 - Not Found";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="error-page">
+                <h1 class="display-1 fw-bold text-warning">404</h1>
+                <h2 class="h3 mb-4" id="errorTitle">Page Not Found</h2>
+                <p class="lead mb-4" id="errorMessage">Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.</p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-primary" id="btnGoHome">
+                        <i class="bi bi-house-door"></i> <span id="textGoHome">Về trang chủ</span>
+                    </a>
+                    <button onclick="history.back()" class="btn btn-outline-secondary" id="btnGoBack">
+                        <i class="bi bi-arrow-left"></i> <span id="textGoBack">Quay lại</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Language translations
+    let errorTranslations = {};
+    let errorDefaultLang = 'vi';
+    
+    // Load translations
+    async function loadErrorTranslations() {
+        try {
+            const response = await fetch('/locales/page.json');
+            if (response.ok) {
+                const data = await response.json();
+                errorDefaultLang = data.default || 'vi';
+                errorTranslations = data;
+                updateErrorTexts();
+            }
+        } catch (error) {
+            // Error loading translations
+        }
+    }
+    
+    // Get translation by key
+    function t(key) {
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+        // Kiểm tra xem có key ngôn ngữ nào trong file JSON trùng với langCode không
+        if (langCode && errorTranslations[langCode]) {
+            return errorTranslations[langCode][key] || errorTranslations[errorDefaultLang]?.[key] || key;
+        }
+        return errorTranslations[errorDefaultLang]?.[key] || key;
+    }
+    
+    // Update error texts
+    function updateErrorTexts() {
+        const errorTitle = document.getElementById('errorTitle');
+        const errorMessage = document.getElementById('errorMessage');
+        const textGoHome = document.getElementById('textGoHome');
+        const textGoBack = document.getElementById('textGoBack');
+        
+        if (errorTitle) errorTitle.textContent = t('error404Title');
+        if (errorMessage) errorMessage.textContent = t('error404Message');
+        if (textGoHome) textGoHome.textContent = t('goHome');
+        if (textGoBack) textGoBack.textContent = t('goBack');
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get current language from localStorage
+        const currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+        
+        // Load translations first
+        await loadErrorTranslations();
+        
+        // Update error texts based on current language from localStorage
+        updateErrorTexts();
+        
+        // Listen for language change events
+        window.addEventListener('languageChanged', async function(event) {
+            await loadErrorTranslations();
+            updateErrorTexts();
+        });
+    });
+</script>
+

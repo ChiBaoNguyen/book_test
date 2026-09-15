@@ -1,0 +1,963 @@
+@{
+    var pageSlug = ViewBag.PageSlug as string ?? "";
+    var langCode = ViewBag.LangCode as string ?? "vi";
+    var menuId = ViewBag.MenuId as string;
+    var pageTitle = ViewData["Title"] as string ?? "Danh sách nội dung";
+}
+
+<section class="heritage-section">
+    <div class="heritage-section-inner">
+            <div id="contentContainer" class="content-container">
+                <!-- Content items will be loaded here -->
+            </div>
+
+            <!-- Loading indicator -->
+            <div id="loadingIndicator" class="text-center my-4 d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden" data-translate="loading">Đang tải...</span>
+                </div>
+                <p class="mt-2 text-muted" data-translate="loadingMore">Đang tải thêm nội dung...</p>
+            </div>
+
+            <!-- End message -->
+            <div id="endMessage" class="text-center my-4 d-none">
+                <p class="text-muted" data-translate="allContentLoaded">Đã hiển thị tất cả nội dung</p>
+            </div>
+    </div>
+</section>
+
+@await Html.PartialAsync("_HomeKhamPha")
+@await Html.PartialAsync("_ArticleToChucSuKien")
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const contentContainer = document.getElementById('contentContainer');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const endMessage = document.getElementById('endMessage');
+        const pageSlug = '@pageSlug';
+        let langCode = localStorage.getItem('selectedLanguage') || '@langCode' || 'vi';
+        const pageMenuId = '@(menuId ?? "")';
+        const initialPageTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(pageTitle));
+        
+        function getMenuTitleForLang(targetLang) {
+            try {
+                const currentMenuMatch = localStorage.getItem('currentMenuMatch');
+                if (currentMenuMatch) {
+                    const menu = JSON.parse(currentMenuMatch);
+                    const translations = menu.translations || menu.Translations || [];
+                    if (Array.isArray(translations) && translations.length > 0) {
+                        const lang = (targetLang || 'vi').toLowerCase();
+                        let translation = translations.find(t =>
+                            (t.languageCode || t.LanguageCode || '').toLowerCase() === lang
+                        );
+                        if (!translation && lang.length >= 2) {
+                            translation = translations.find(t =>
+                                (t.languageCode || t.LanguageCode || '').toLowerCase().substring(0, 2) === lang.substring(0, 2)
+                            );
+                        }
+                        translation = translation || translations[0];
+                        const title = translation?.title || translation?.Title;
+                        if (title) return title;
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+            const activeNavLink = document.querySelector('.nav-link.active');
+            if (activeNavLink) return activeNavLink.textContent.trim();
+            return initialPageTitle || 'Danh sách nội dung';
+        }
+
+        function updatePageTitle() {
+            const title = getMenuTitleForLang(langCode);
+            const siteName = document.title.includes(' - ')
+                ? document.title.split(' - ').slice(1).join(' - ')
+                : (document.title || '');
+            document.title = siteName ? `${title} - ${siteName}` : title;
+        }
+
+        function getCurrentMenuIcon() {
+            try {
+                const raw = localStorage.getItem('currentMenuMatch');
+                if (raw) {
+                    const menu = JSON.parse(raw);
+                    return (menu.icon || menu.Icon || '').trim();
+                }
+            } catch (e) {
+                // ignore
+            }
+            return '';
+        }
+
+        function buildMenuLabelHtml() {
+            const title = getMenuTitleForLang(langCode);
+            const displayTitle = escapeHtml((title || initialPageTitle || 'Danh sách nội dung').toUpperCase());
+            const icon = getCurrentMenuIcon();
+            let iconHtml = '';
+            if (icon && /\bcil\b/i.test(icon)) {
+                iconHtml = `<i class="${escapeHtml(icon)} page-menu-label-icon" aria-hidden="true"></i>`;
+            }
+            return `<p class="page-menu-label">${iconHtml}<span>${displayTitle}</span></p>`;
+        }
+
+        function buildSectionHeaderHtml(type) {
+            return `
+                ${buildMenuLabelHtml()}
+                <div class="d-flex justify-content-end align-items-center">
+                    <div class="view-toggle view-toggle-${type}">
+                        <button class="btn btn-xs btn-outline-secondary ${viewState[type] === 'grid' ? 'active' : ''}" data-view="grid" data-type="${type}" title="${t('gridView')}">
+                            <i class="${t('gridViewIcon')}" style="font-size: 0.875rem;"></i>
+                        </button>
+                        <button class="btn btn-xs btn-outline-secondary ${viewState[type] === 'list' ? 'active' : ''}" data-view="list" data-type="${type}" title="${t('listView')}">
+                            <i class="${t('listViewIcon')}" style="font-size: 0.875rem;"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function attachViewToggleListeners(headerDiv) {
+            headerDiv.querySelectorAll('.view-toggle button').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const view = this.getAttribute('data-view');
+                    const contentType = this.getAttribute('data-type');
+                    setViewForType(contentType, view);
+                });
+            });
+        }
+
+        function updateAllSectionHeaders() {
+            Object.keys(viewState).forEach(type => {
+                const sectionDiv = document.getElementById(`content-section-${type}`);
+                if (!sectionDiv) return;
+                const headerDiv = sectionDiv.querySelector('.content-section-header');
+                if (!headerDiv) return;
+                headerDiv.innerHTML = buildSectionHeaderHtml(type);
+                attachViewToggleListeners(headerDiv);
+            });
+        }
+        
+        // Language translations
+        let translations = {};
+        let defaultLang = 'vi';
+        
+        // Load language file
+        async function loadTranslations() {
+            try {
+                const response = await fetch('/locales/page.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    defaultLang = data.default || 'vi';
+                    translations = data;
+                }
+            } catch (error) {
+                // Error loading translations
+            }
+        }
+        
+        // Get translation by key
+        function t(key) {
+            // Kiểm tra xem có key ngôn ngữ nào trong file JSON trùng với langCode không
+            if (langCode && translations[langCode]) {
+                // Nếu có key ngôn ngữ trùng với langCode thì ưu tiên dùng nó
+                // Nếu key cụ thể không có thì fallback về default cho key đó
+                return translations[langCode][key] || translations[defaultLang]?.[key] || key;
+            }
+            // Chỉ khi không có key ngôn ngữ nào trùng với langCode thì mới dùng default
+            return translations[defaultLang]?.[key] || key;
+        }
+        
+        let isLoading = false;
+        let selectedMenuId = pageMenuId || '';
+        
+        // Cache loaded data to avoid reloading on language change
+        // Store items by type and page for pagination support
+        const cachedData = {
+            article: null,
+            product: null,
+            event: null,
+            book: null,
+            featuredArticles: null
+        };
+
+        let hasFeaturedArticles = false;
+        let featuredArticleIds = [];
+        
+        // View state for each content type (grid or list)
+        const viewState = {
+            article: 'grid',
+            product: 'grid',
+            event: 'grid',
+            book: 'grid'
+        };
+        
+        // Pagination state for each content type
+        const ARTICLE_PAGE_SIZE = 6;
+        const DEFAULT_PAGE_SIZE = 12;
+        const paginationState = {
+            article: { currentPage: 1, totalItems: 0, pageSize: ARTICLE_PAGE_SIZE },
+            product: { currentPage: 1, totalItems: 0, pageSize: DEFAULT_PAGE_SIZE },
+            event: { currentPage: 1, totalItems: 0, pageSize: DEFAULT_PAGE_SIZE },
+            book: { currentPage: 1, totalItems: 0, pageSize: DEFAULT_PAGE_SIZE }
+        };
+        
+        // Initialize: Load translations first, then load content
+        (async function init() {
+            await loadTranslations();
+            updateTranslationsInDOM();
+            updatePageTitle();
+            setTimeout(updatePageTitle, 600);
+            
+            // Initial load
+            if (selectedMenuId) {
+                loadAllContent();
+            } else {
+                endMessage.classList.remove('d-none');
+            }
+        })();
+        
+        // Update translations in existing DOM elements
+        function updateTranslationsInDOM() {
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                el.textContent = t(key);
+            });
+        }
+
+        // Reset and reload content
+        function resetAndReload() {
+            contentContainer.innerHTML = '';
+            hasFeaturedArticles = false;
+            featuredArticleIds = [];
+            document.getElementById('article-featured-section')?.remove();
+            // Reset pagination and view state
+            Object.keys(paginationState).forEach(type => {
+                paginationState[type].currentPage = 1;
+                paginationState[type].totalItems = 0;
+                viewState[type] = 'grid';
+            });
+            loadAllContent();
+        }
+
+        // Load all content types (Article, Product, Event, Book) by menuId
+        async function loadAllContent() {
+            if (isLoading) return;
+            
+            if (!selectedMenuId) {
+                return;
+            }
+            
+            isLoading = true;
+            loadingIndicator.classList.remove('d-none');
+            
+            try {
+                hasFeaturedArticles = false;
+                featuredArticleIds = [];
+                cachedData.featuredArticles = null;
+
+                const featuredArticles = await loadFeaturedArticlesByMenu(selectedMenuId);
+                if (featuredArticles.length > 0) {
+                    featuredArticleIds = featuredArticles
+                        .map(item => String(item.id || item.Id || '').trim())
+                        .filter(Boolean);
+                    cachedData.featuredArticles = featuredArticles;
+                    hasFeaturedArticles = featuredArticleIds.length > 0;
+                    renderFeaturedArticlesSection(featuredArticles);
+                } else {
+                    document.getElementById('article-featured-section')?.remove();
+                }
+
+                // Check which content types have data (list excludes only featured cards shown above)
+                const [articlesCount, productsCount, eventsCount, booksCount] = await Promise.all([
+                    getContentCount('article', selectedMenuId),
+                    getContentCount('product', selectedMenuId),
+                    getContentCount('event', selectedMenuId),
+                    getContentCount('book', selectedMenuId)
+                ]);
+
+                const contentTypesWithData = [];
+                if (articlesCount > 0) contentTypesWithData.push('article');
+                if (productsCount > 0) contentTypesWithData.push('product');
+                if (eventsCount > 0) contentTypesWithData.push('event');
+                if (booksCount > 0) contentTypesWithData.push('book');
+
+                syncKhamPhaSection(contentTypesWithData.includes('article') || hasFeaturedArticles);
+                syncArticleEventOrgSection(contentTypesWithData.includes('article') || hasFeaturedArticles);
+
+                // Page size: articles always 6; other types 50 if sole section else 12
+                const otherPageSize = contentTypesWithData.length === 1 ? 50 : DEFAULT_PAGE_SIZE;
+
+                contentTypesWithData.forEach(type => {
+                    paginationState[type].pageSize = type === 'article' ? ARTICLE_PAGE_SIZE : otherPageSize;
+                    paginationState[type].currentPage = 1;
+                    paginationState[type].totalItems = type === 'article' ? articlesCount :
+                                                      type === 'product' ? productsCount :
+                                                      type === 'event' ? eventsCount : booksCount;
+                });
+
+                // Load and render each content type with pagination
+                for (const type of contentTypesWithData) {
+                    await loadAndRenderContentSection(type, selectedMenuId);
+                }
+
+            } catch (error) {
+                // Error loading content
+            } finally {
+                isLoading = false;
+                loadingIndicator.classList.add('d-none');
+            }
+        }
+
+        // Get content count for a type
+        async function getContentCount(type, menuId) {
+            try {
+                // Load first page with pageSize=1 to get totalItems
+                const endpoint = getEndpointForType(type, menuId, 1, 1);
+                const response = await fetch(endpoint);
+                if (!response.ok) return 0;
+                
+                const data = await response.json();
+                
+                // API returns { items: [], totalItems: number, pageNumber: number, pageSize: number, totalPages: number }
+                if (data.totalItems !== undefined) {
+                    return data.totalItems;
+                }
+                
+                // Fallback: if response is array, return length
+                if (Array.isArray(data)) {
+                    return data.length;
+                }
+                
+                // Fallback: if has items array, return items length as indicator
+                if (data.items && Array.isArray(data.items)) {
+                    return data.items.length > 0 ? 1 : 0;
+                }
+                
+                return 0;
+            } catch (error) {
+                // Error getting count
+                return 0;
+            }
+        }
+
+        async function loadFeaturedArticlesByMenu(menuId) {
+            try {
+                const response = await fetch(`/api/Portal/articles/menu/${encodeURIComponent(menuId)}/featured?limit=3`);
+                if (!response.ok) return [];
+
+                const data = await response.json();
+                if (Array.isArray(data)) return data;
+                if (data.items && Array.isArray(data.items)) return data.items;
+                return [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function findItemTranslation(item) {
+            const currentLang = localStorage.getItem('selectedLanguage') || langCode || 'vi';
+            if (!item.translations || !Array.isArray(item.translations)) return null;
+
+            let translation = item.translations.find(t =>
+                (t.languageCode || t.LanguageCode || '').toLowerCase() === currentLang.toLowerCase()
+            );
+
+            if (!translation) {
+                translation = item.translations.find(t => {
+                    const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                    const lang = currentLang.toLowerCase();
+                    return tLang === lang || tLang.substring(0, 2) === lang.substring(0, 2);
+                });
+            }
+
+            return translation || item.translations[0] || null;
+        }
+
+        function getArticleLink(item, translation) {
+            const urlSlug = translation?.urlSlug || translation?.UrlSlug || '';
+            const defaultSlug = urlSlug || 'article';
+            return `/article/${defaultSlug}`;
+        }
+
+        function stripHtmlSummary(summary) {
+            if (!summary) return '';
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = summary;
+            return (tempDiv.textContent || tempDiv.innerText || '').trim();
+        }
+
+        function getFeaturedSummaryRaw(translation) {
+            return (translation.summary || translation.Summary ||
+                translation.description || translation.Description ||
+                translation.content || translation.Content || '').trim();
+        }
+
+        function buildFeaturedArticleCard(item, variant) {
+            const translation = findItemTranslation(item);
+            if (!translation) return '';
+
+            const title = translation.title || translation.Title || '';
+            const summaryRaw = getFeaturedSummaryRaw(translation);
+            const image = item.image || item.Image || '';
+            const link = getArticleLink(item, translation);
+            const showSummary = variant === 'main' && summaryRaw;
+            const summaryHtml = showSummary
+                ? `<div class="article-featured-card__summary article-featured-card__summary--full">${summaryRaw}</div>`
+                : '';
+
+            return `
+                <a href="${escapeHtml(link)}" class="article-featured-card article-featured-card--${variant}">
+                    ${image ? `<div class="article-featured-card__media"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" class="article-featured-card__img" onerror="this.parentElement.style.display='none'"></div>` : ''}
+                    <div class="article-featured-card__body">
+                        <h3 class="article-featured-card__title">${escapeHtml(title)}</h3>
+                        ${summaryHtml}
+                        <span class="article-featured-card__cta">${escapeHtml(t('featuredViewMore'))}</span>
+                    </div>
+                </a>
+            `;
+        }
+
+        function renderFeaturedArticlesSection(articles) {
+            document.getElementById('article-featured-section')?.remove();
+            if (!articles || articles.length === 0) return;
+
+            const mainArticle = articles[0];
+            const sideArticles = articles.slice(1, 3);
+            const mainHtml = buildFeaturedArticleCard(mainArticle, 'main');
+            if (!mainHtml) return;
+
+            const sideHtml = sideArticles
+                .map(item => buildFeaturedArticleCard(item, 'side'))
+                .filter(Boolean)
+                .join('');
+
+            const section = document.createElement('section');
+            section.className = 'article-featured-section';
+            section.id = 'article-featured-section';
+            section.innerHTML = `
+                <div class="article-featured-section__inner">
+                    <div class="article-featured-section__head">
+                        <p class="article-featured-section__label">${escapeHtml(t('featuredLabel'))}</p>
+                    </div>
+                    <div class="article-featured-section__grid">
+                        ${mainHtml}
+                        ${sideHtml ? `<div class="article-featured-section__side">${sideHtml}</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            contentContainer.insertBefore(section, contentContainer.firstChild);
+        }
+
+        async function loadAndRenderFeaturedArticles(menuId) {
+            const featuredArticles = await loadFeaturedArticlesByMenu(menuId);
+            cachedData.featuredArticles = featuredArticles;
+            featuredArticleIds = featuredArticles
+                .map(item => String(item.id || item.Id || '').trim())
+                .filter(Boolean);
+            hasFeaturedArticles = featuredArticleIds.length > 0;
+
+            if (hasFeaturedArticles) {
+                renderFeaturedArticlesSection(featuredArticles);
+            } else {
+                document.getElementById('article-featured-section')?.remove();
+            }
+        }
+
+        function updateFeaturedArticlesTranslations() {
+            if (!hasFeaturedArticles || !cachedData.featuredArticles || cachedData.featuredArticles.length === 0) return;
+            renderFeaturedArticlesSection(cachedData.featuredArticles);
+        }
+
+        function syncKhamPhaSection(show) {
+            const section = document.getElementById('homeKhamPhaSection');
+            if (!section) return;
+            if (!show) {
+                section.classList.add('d-none');
+            }
+        }
+
+        function syncArticleEventOrgSection(show) {
+            const section = document.getElementById('articleEventOrgSection');
+            if (!section) return;
+            section.dataset.allowDisplay = show ? 'true' : 'false';
+            if (!show) {
+                section.classList.add('d-none');
+            } else if (section.querySelector('#articleEventOrgContent')?.innerHTML.trim()) {
+                section.classList.remove('d-none');
+            }
+        }
+
+        // Load and render content section with pagination
+        async function loadAndRenderContentSection(type, menuId) {
+            const state = paginationState[type];
+            const items = await loadContentByType(type, menuId, state.currentPage, state.pageSize);
+            
+            if (!items || items.length === 0) {
+                // Remove existing section if no items
+                const existingSection = document.getElementById(`content-section-${type}`);
+                if (existingSection) {
+                    existingSection.remove();
+                }
+                return;
+            }
+            
+            // Cache items for this type (current page)
+            cachedData[type] = items;
+            
+            // Get type label from translations
+            const typeLabels = {
+                article: t('articles'),
+                product: t('products'),
+                event: t('events'),
+                book: t('books')
+            };
+            
+            // Content items container
+            const itemsContainer = document.createElement('div');
+            itemsContainer.className = 'content-items-container';
+            itemsContainer.id = `items-container-${type}`;
+            itemsContainer.setAttribute('data-view', viewState[type]);
+            
+            items.forEach(item => {
+                const contentItem = createContentItem(item, type);
+                if (contentItem) {
+                    itemsContainer.appendChild(contentItem);
+                }
+            });
+            
+            // Only create section if there are items to display
+            if (itemsContainer.children.length === 0) {
+                // Remove existing section if no items
+                const existingSection = document.getElementById(`content-section-${type}`);
+                if (existingSection) {
+                    existingSection.remove();
+                }
+                return;
+            }
+            
+            // Create section container
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'content-section';
+            sectionDiv.id = `content-section-${type}`;
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'content-section-header';
+            headerDiv.innerHTML = buildSectionHeaderHtml(type);
+            sectionDiv.appendChild(headerDiv);
+            attachViewToggleListeners(headerDiv);
+            
+            sectionDiv.appendChild(itemsContainer);
+            
+            // Pagination
+            const totalPages = Math.ceil(state.totalItems / state.pageSize);
+            if (totalPages > 1) {
+                const paginationDiv = createPagination(type, state.currentPage, totalPages);
+                sectionDiv.appendChild(paginationDiv);
+            }
+            
+            contentContainer.appendChild(sectionDiv);
+        }
+
+        // Build page number buttons (same logic as gallery.js)
+        function buildPageButtons(currentPage, totalPages) {
+            const buttons = [];
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+                buttons.push({ type: 'page', page: 1 });
+                if (startPage > 2) buttons.push({ type: 'ellipsis' });
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                buttons.push({ type: 'page', page: i });
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) buttons.push({ type: 'ellipsis' });
+                buttons.push({ type: 'page', page: totalPages });
+            }
+
+            return buttons;
+        }
+
+        // Create pagination controls (gallery style)
+        function createPagination(type, currentPage, totalPages) {
+            const paginationDiv = document.createElement('nav');
+            paginationDiv.className = 'gallery-album-pagination';
+            paginationDiv.setAttribute('aria-label', `Pagination for ${type}`);
+
+            const pageButtons = buildPageButtons(currentPage, totalPages);
+            const pagesHtml = pageButtons.map(btn => {
+                if (btn.type === 'ellipsis') {
+                    return '<span class="gallery-album-pagination__ellipsis" aria-hidden="true">...</span>';
+                }
+                const isActive = btn.page === currentPage;
+                return `<button type="button" class="gallery-album-pagination__page${isActive ? ' is-active' : ''}" data-page="${btn.page}" ${isActive ? 'aria-current="page"' : ''}>${btn.page}</button>`;
+            }).join('');
+
+            paginationDiv.innerHTML = `
+                <button type="button" class="gallery-album-pagination__nav" data-action="prev" ${currentPage <= 1 ? 'disabled' : ''}>
+                    <i class="bi bi-chevron-left" aria-hidden="true"></i> ${escapeHtml(t('previous'))}
+                </button>
+                ${pagesHtml}
+                <button type="button" class="gallery-album-pagination__nav" data-action="next" ${currentPage >= totalPages ? 'disabled' : ''}>
+                    ${escapeHtml(t('next'))} <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </button>`;
+
+            paginationDiv.querySelector('[data-action="prev"]')?.addEventListener('click', () => {
+                if (paginationState[type].currentPage > 1) {
+                    paginationState[type].currentPage--;
+                    reloadContentSection(type);
+                }
+            });
+            paginationDiv.querySelector('[data-action="next"]')?.addEventListener('click', () => {
+                if (paginationState[type].currentPage < totalPages) {
+                    paginationState[type].currentPage++;
+                    reloadContentSection(type);
+                }
+            });
+            paginationDiv.querySelectorAll('[data-page]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const page = parseInt(btn.getAttribute('data-page'), 10);
+                    if (!Number.isNaN(page) && page !== paginationState[type].currentPage) {
+                        paginationState[type].currentPage = page;
+                        reloadContentSection(type);
+                    }
+                });
+            });
+
+            return paginationDiv;
+        }
+
+        // Reload a specific content section
+        async function reloadContentSection(type) {
+            const sectionDiv = document.getElementById(`content-section-${type}`);
+            if (!sectionDiv) return;
+            
+            const itemsContainer = sectionDiv.querySelector('.content-items-container');
+            const paginationWrapper = sectionDiv.querySelector('.gallery-album-pagination');
+            
+            // Show loading
+            if (itemsContainer) {
+                itemsContainer.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+            }
+            
+            const state = paginationState[type];
+            const items = await loadContentByType(type, selectedMenuId, state.currentPage, state.pageSize);
+            
+            // If no items, remove the section
+            if (!items || items.length === 0) {
+                sectionDiv.remove();
+                return;
+            }
+            
+            // Cache items for this type and page
+            cachedData[type] = items;
+            
+            if (itemsContainer) {
+                itemsContainer.innerHTML = '';
+                items.forEach(item => {
+                    const contentItem = createContentItem(item, type);
+                    if (contentItem) {
+                        itemsContainer.appendChild(contentItem);
+                    }
+                });
+            }
+            
+            // Update pagination
+            const totalPages = Math.ceil(state.totalItems / state.pageSize);
+            if (paginationWrapper) {
+                if (totalPages > 1) {
+                    paginationWrapper.replaceWith(createPagination(type, state.currentPage, totalPages));
+                } else {
+                    paginationWrapper.remove();
+                }
+            } else if (totalPages > 1) {
+                sectionDiv.appendChild(createPagination(type, state.currentPage, totalPages));
+            }
+            
+            // Scroll to section
+            sectionDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Set view for a specific content type
+        function setViewForType(type, view) {
+            viewState[type] = view;
+            
+            // Update items container
+            const itemsContainer = document.getElementById(`items-container-${type}`);
+            if (itemsContainer) {
+                itemsContainer.setAttribute('data-view', view);
+            }
+            
+            // Update toggle buttons
+            const toggleButtons = document.querySelectorAll(`.view-toggle-${type} button`);
+            toggleButtons.forEach(btn => {
+                if (btn.getAttribute('data-view') === view) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Build article list query — exclude only articles already shown in featured block
+        function getArticleExcludeQuery() {
+            if (featuredArticleIds.length > 0) {
+                return '&excludeArticleIds=' + encodeURIComponent(featuredArticleIds.join(','));
+            }
+            if (hasFeaturedArticles) {
+                return '&excludeFeatured=true';
+            }
+            return '';
+        }
+
+        // Get endpoint for content type
+        function getEndpointForType(type, menuId, pageNumber, pageSize) {
+            let endpoint = '';
+            switch(type) {
+                case 'article':
+                    endpoint = `/api/Portal/articles/menu/${encodeURIComponent(menuId)}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+                    endpoint += getArticleExcludeQuery();
+                    break;
+                case 'product':
+                    endpoint = `/api/Portal/products/menu/${encodeURIComponent(menuId)}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+                    break;
+                case 'event':
+                    endpoint = `/api/Portal/events/menu/${encodeURIComponent(menuId)}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+                    break;
+                case 'book':
+                    endpoint = `/api/Portal/books/menu/${encodeURIComponent(menuId)}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+                    break;
+                default:
+                    return '';
+            }
+            return endpoint;
+        }
+
+        // Load content by type using get by menu API with pagination
+        async function loadContentByType(type, menuId, pageNumber = 1, pageSize = DEFAULT_PAGE_SIZE) {
+            try {
+                const endpoint = getEndpointForType(type, menuId, pageNumber, pageSize);
+                if (!endpoint) return [];
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    return [];
+                }
+
+                const data = await response.json();
+                
+                // Handle different response formats
+                let items = [];
+                if (Array.isArray(data)) {
+                    items = data;
+                } else if (data.items && Array.isArray(data.items)) {
+                    items = data.items;
+                    // Update total items if available
+                    if (data.totalItems !== undefined) {
+                        paginationState[type].totalItems = data.totalItems;
+                    }
+                } else if (data.data && Array.isArray(data.data)) {
+                    items = data.data;
+                    if (data.totalItems !== undefined) {
+                        paginationState[type].totalItems = data.totalItems;
+                    }
+                }
+                
+                return items;
+            } catch (error) {
+                // Error loading content
+                return [];
+            }
+        }
+
+        // Create content item element
+        function createContentItem(item, type) {
+            const div = document.createElement('div');
+            div.className = 'content-item';
+            
+            // Get current language from localStorage
+            const currentLang = localStorage.getItem('selectedLanguage') || langCode || 'vi';
+            
+            // Find translation matching current language
+            let translation = null;
+            if (item.translations && Array.isArray(item.translations)) {
+                // First try exact match (check both PascalCase and camelCase)
+                translation = item.translations.find(t => 
+                    (t.languageCode || t.LanguageCode || '').toLowerCase() === currentLang.toLowerCase()
+                );
+                
+                // If no exact match, try language code prefix
+                if (!translation) {
+                    translation = item.translations.find(t => {
+                        const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                        const lang = currentLang.toLowerCase();
+                        return tLang === lang || 
+                               tLang.substring(0, 2) === lang.substring(0, 2);
+                    });
+                }
+                
+                // Fallback to first translation
+                if (!translation && item.translations.length > 0) {
+                    translation = item.translations[0];
+                }
+            }
+            
+            if (!translation) return div;
+
+            // Get translation properties (check both PascalCase and camelCase)
+            const title = translation.title || translation.Title || translation.name || translation.Name || 'Không có tiêu đề';
+            const summary = translation.summary || translation.Summary || translation.description || translation.Description || '';
+            const image = item.image || item.Image || item.thumbnail || item.Thumbnail || item.images?.[0] || item.Images?.[0] || '';
+            const id = item.id || item.Id || '';
+            const urlSlug = translation.urlSlug || translation.UrlSlug || '';
+
+            // Generate link based on type
+            // Always use direct route format: /{type}/{slug} (without page slug and id)
+            let link = '';
+            const defaultSlug = urlSlug || type; // Use type as default if no urlSlug
+            
+            if (type === 'article') {
+                link = `/article/${defaultSlug}`;
+            } else if (type === 'event') {
+                link = `/event/${defaultSlug}`;
+            } else if (type === 'book') {
+                link = `/book/${defaultSlug}`;
+            } else if (type === 'product') {
+                link = `/product/${defaultSlug}`;
+            }
+
+            // Strip HTML tags from summary for display (only show plain text)
+            let summaryText = '';
+            if (summary) {
+                // Remove HTML tags and get plain text
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = summary;
+                summaryText = tempDiv.textContent || tempDiv.innerText || '';
+            }
+            
+            // Generate price HTML for products
+            let priceHtml = '';
+            if (type === 'product') {
+                const price = item.price || 0;
+                const discountPrice = item.discountPrice;
+                
+                if (discountPrice && discountPrice < price) {
+                    priceHtml = `
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-danger fw-bold">${formatPrice(discountPrice)} đ</span>
+                            <span class="text-muted text-decoration-line-through small">${formatPrice(price)} đ</span>
+                        </div>
+                    `;
+                } else if (price) {
+                    priceHtml = `<span class="text-primary fw-bold">${formatPrice(price)} đ</span>`;
+                }
+            }
+            
+            div.innerHTML = `
+                ${image ? `<div class="content-item-media"><a href="${escapeHtml(link)}" class="content-item-media__link"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" class="content-item-image" onerror="this.closest('.content-item-media').style.display='none'"></a></div>` : ''}
+                <div class="content-item-body">
+                    <h3 class="content-item-title">
+                        <a href="${escapeHtml(link)}">${escapeHtml(title)}</a>
+                    </h3>
+                    ${summaryText ? `<p class="content-item-summary">${escapeHtml(summaryText.substring(0, 150))}${summaryText.length > 150 ? '...' : ''}</p>` : ''}
+                    <div class="content-item-meta${priceHtml ? ' has-price' : ''}">
+                        ${priceHtml ? `<div>${priceHtml}</div>` : ''}
+                        <a href="${escapeHtml(link)}" class="heritage-btn-continue">${escapeHtml(t('viewContinue') || t('viewDetails'))}</a>
+                    </div>
+                </div>
+            `;
+
+            return div;
+        }
+
+        // Format price with Vietnamese locale
+        function formatPrice(price) {
+            return new Intl.NumberFormat('vi-VN').format(price);
+        }
+
+        // Escape HTML to prevent XSS and broken HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+            });
+        }
+
+        // Update content items with new language (re-render without reloading data)
+        function updateContentItemsTranslations() {
+            // Get current language
+            const currentLang = localStorage.getItem('selectedLanguage') || langCode || 'vi';
+            
+            // Update each content section by extracting data from existing items
+            Object.keys(viewState).forEach(type => {
+                const itemsContainer = document.getElementById(`items-container-${type}`);
+                if (!itemsContainer) return;
+                
+                // Extract data from existing content items
+                const existingItems = Array.from(itemsContainer.querySelectorAll('.content-item'));
+                if (existingItems.length === 0) return;
+                
+                // Get original items data from data attributes or reconstruct from DOM
+                // Since we need the full item data with all translations, we'll need to store it
+                // For now, we'll re-render by getting items from the section's data
+                // But a better approach is to store items in a data attribute or cache
+                
+                // Get items from cache if available, otherwise skip
+                const cachedItems = cachedData[type];
+                if (!cachedItems || cachedItems.length === 0) {
+                    // If no cache, we need to reload (fallback)
+                    return;
+                }
+                
+                // Clear and re-render with new language
+                itemsContainer.innerHTML = '';
+                cachedItems.forEach(item => {
+                    const contentItem = createContentItem(item, type);
+                    if (contentItem) {
+                        itemsContainer.appendChild(contentItem);
+                    }
+                });
+            });
+            
+            updateAllSectionHeaders();
+        }
+
+        window.addEventListener('menuLoaded', function() {
+            updatePageTitle();
+            updateAllSectionHeaders();
+        });
+
+        // Listen for language change events
+        window.addEventListener('languageChanged', async function(event) {
+            const newLang = event.detail?.langCode || 'vi';
+            
+            // Update langCode
+            langCode = newLang;
+            
+            // Reload translations if needed
+            await loadTranslations();
+            updateTranslationsInDOM();
+            updatePageTitle();
+            
+            // Only re-render existing content with new translations, don't reload data
+            updateFeaturedArticlesTranslations();
+            updateContentItemsTranslations();
+        });
+    });
+</script>

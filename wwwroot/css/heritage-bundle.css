@@ -1,0 +1,22 @@
+/* Heritage UI ? load order matters */
+@import url('fonts.css');
+@import url('heritage-theme.css');
+@import url('heritage-content.css');
+@import url('slider.css');
+@import url('menu.css');
+@import url('footer.css');
+@import url('home.css');
+@import url('page.css');
+@import url('article-tochucsukien.css');
+@import url('article.css');
+@import url('event.css');
+@import url('product.css');
+@import url('book.css');
+@import url('singlepage.css');
+@import url('contact.css');
+@import url('gallery.css');
+@import url('events-page.css');
+@import url('notifications.css');
+@import url('site.css');
+@import url('float-contact.css');
+@import url('topbar.css');

@@ -1,0 +1,607 @@
+@{
+    var product = ViewBag.Product as CreativeWeb.Controllers.ProductDto;
+    var pageSlug = ViewBag.PageSlug as string ?? "";
+    // Get language from query string or cookie
+    var currentLang = Context.Request.Query["lang"].ToString();
+    if (string.IsNullOrWhiteSpace(currentLang))
+    {
+        currentLang = Context.Request.Cookies["selectedLanguage"] ?? "vi";
+    }
+    
+    var translation = product?.Translations?.FirstOrDefault(t => t.LanguageCode == currentLang)
+        ?? product?.Translations?.FirstOrDefault();
+    
+    ViewData["Title"] = translation?.Name ?? "Sản phẩm";
+    var productName = translation?.Name ?? "Sản phẩm";
+    // Try Description first, then Content as fallback (similar to Article/Event)
+    var productDescription = translation?.Description ?? translation?.Content ?? "";
+    var productImages = product?.Images ?? new List<string>();
+    var categoryName = product?.CategoryName ?? "";
+    var price = product?.Price;
+    var discountPrice = product?.DiscountPrice;
+}
+
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="product-images mb-4">
+                <div id="mainImage" class="main-image-container mb-3">
+                    <img id="mainProductImage" src="" alt="@productName" class="img-fluid rounded shadow" style="display: none;" />
+                    <div id="noImageMessage" class="text-center text-muted p-5" style="display: none;">
+                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Không có hình ảnh</p>
+                    </div>
+                </div>
+                <div id="productThumbnails" class="product-thumbnails" style="display: none;">
+                    <!-- Thumbnails will be loaded here -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="product-content">
+                @if (!string.IsNullOrWhiteSpace(productName))
+                {
+                    <h1 class="mb-3" id="productName">@productName</h1>
+                }
+                
+                <div class="product-price mb-4" id="productPrice">
+                    @if (discountPrice.HasValue && discountPrice.Value < price)
+                    {
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="h3 text-danger fw-bold">@discountPrice.Value.ToString("N0") đ</span>
+                            <span class="text-muted text-decoration-line-through">@price.Value.ToString("N0") đ</span>
+                            @{
+                                var discountPercent = Math.Round((1 - (discountPrice.Value / price.Value)) * 100);
+                            }
+                            <span class="badge bg-danger">-@discountPercent%</span>
+                        </div>
+                    }
+                    else if (price.HasValue)
+                    {
+                        <span class="h3 text-primary fw-bold">@price.Value.ToString("N0") đ</span>
+                    }
+                </div>
+                
+                @if (!string.IsNullOrWhiteSpace(categoryName))
+                {
+                    <p class="mb-3"><strong>Danh mục:</strong> <span id="productCategory">@categoryName</span></p>
+                }
+                
+                @if (!string.IsNullOrWhiteSpace(productDescription))
+                {
+                    <div class="product-description mb-4" id="productDescription">
+                        @Html.Raw(productDescription)
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Products Section -->
+    <div class="related-posts mt-5" id="relatedProductsSection" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="mb-0" id="relatedProductsTitle">Sản phẩm liên quan</h3>
+            <div class="view-toggle view-toggle-products">
+                <button class="btn btn-xs btn-outline-secondary active" data-view="grid" id="gridViewBtn" title="">
+                    <i class="bi bi-grid" style="font-size: 0.875rem;"></i>
+                </button>
+                <button class="btn btn-xs btn-outline-secondary" data-view="list" id="listViewBtn" title="">
+                    <i class="bi bi-list" style="font-size: 0.875rem;"></i>
+                </button>
+            </div>
+        </div>
+        <div id="relatedProductsContainer" class="related-posts-container" data-view="grid">
+            <!-- Related products will be loaded here -->
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // Store product data with all translations
+    const productData = @Html.Raw(Json.Serialize(new {
+        Id = product?.Id,
+        Images = product?.Images,
+        Price = product?.Price,
+        DiscountPrice = product?.DiscountPrice,
+        CategoryName = product?.CategoryName,
+        CategoryIds = product?.CategoryIds ?? new List<string>(),
+        Translations = product?.Translations
+    }));
+    
+    // Language translations
+    let productTranslations = {};
+    let productDefaultLang = 'vi';
+    
+    // Load translations
+    async function loadProductTranslations() {
+        try {
+            const response = await fetch('/locales/page.json');
+            if (response.ok) {
+                const data = await response.json();
+                productDefaultLang = data.default || 'vi';
+                productTranslations = data;
+            }
+        } catch (error) {
+            // Error loading product translations
+        }
+    }
+    
+    // Get translation by key
+    function t(key) {
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+        if (langCode && productTranslations[langCode]) {
+            return productTranslations[langCode][key] || productTranslations[productDefaultLang]?.[key] || key;
+        }
+        return productTranslations[productDefaultLang]?.[key] || key;
+    }
+    
+    // Update related products title
+    function updateRelatedProductsTitle() {
+        // Ensure translations are loaded
+        if (Object.keys(productTranslations).length === 0) {
+            // If translations not loaded yet, wait a bit and try again
+            setTimeout(() => {
+                updateRelatedProductsTitle();
+            }, 50);
+            return;
+        }
+        
+        const titleEl = document.getElementById('relatedProductsTitle');
+        if (titleEl) {
+            const titleText = t('relatedProducts');
+            titleEl.textContent = titleText;
+        } else {
+            // Element not found, wait a bit and try again
+            setTimeout(() => {
+                updateRelatedProductsTitle();
+            }, 50);
+        }
+        
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        if (gridViewBtn) {
+            gridViewBtn.title = t('gridView');
+        }
+        
+        const listViewBtn = document.getElementById('listViewBtn');
+        if (listViewBtn) {
+            listViewBtn.title = t('listView');
+        }
+    }
+    
+    let relatedProductsView = 'grid';
+    
+    // Set view for related products
+    function setRelatedProductsView(view) {
+        relatedProductsView = view;
+        const relatedProductsContainer = document.getElementById('relatedProductsContainer');
+        if (relatedProductsContainer) {
+            relatedProductsContainer.setAttribute('data-view', view);
+        }
+        
+        // Update toggle buttons
+        const toggleButtons = document.querySelectorAll('.view-toggle-products button');
+        toggleButtons.forEach(btn => {
+            if (btn.getAttribute('data-view') === view) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get current language from localStorage
+        const currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+        
+        // Load translations first
+        await loadProductTranslations();
+        
+        // Update product content based on current language from localStorage
+        updateProductLanguage(currentLang);
+        
+        // Wait a bit to ensure DOM is fully ready and other scripts have run
+        setTimeout(() => {
+            // Update related products title (ensure translations are loaded and DOM is ready)
+            updateRelatedProductsTitle();
+            
+            // Load related products
+            loadRelatedProducts();
+        }, 100);
+        
+        // Setup view toggle buttons
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        
+        if (gridViewBtn) {
+            gridViewBtn.addEventListener('click', function() {
+                setRelatedProductsView('grid');
+            });
+        }
+        
+        if (listViewBtn) {
+            listViewBtn.addEventListener('click', function() {
+                setRelatedProductsView('list');
+            });
+        }
+        
+        // Listen for language change events
+        window.addEventListener('languageChanged', async function(event) {
+            const newLang = event.detail?.langCode || 'vi';
+            
+            // Reload translations
+            await loadProductTranslations();
+            
+            // Update related products title and button tooltips
+            updateRelatedProductsTitle();
+            
+            // Update product content without reload
+            updateProductLanguage(newLang);
+            
+            // Reload related products with new language
+            loadRelatedProducts();
+        });
+    });
+    
+    // Update product content based on selected language
+    function updateProductLanguage(langCode) {
+        // Check both PascalCase and camelCase for Translations
+        const translations = productData?.Translations || productData?.translations || [];
+        if (!productData || !translations || translations.length === 0) return;
+        
+        // Find translation matching current language
+        let translation = null;
+        
+        // First try exact match (check both PascalCase and camelCase)
+        translation = translations.find(t => {
+            const lang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+            return lang === langCode.toLowerCase();
+        });
+        
+        // If no exact match, try language code prefix
+        if (!translation) {
+            translation = translations.find(t => {
+                const tLang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+                const currentLang = langCode.toLowerCase();
+                return tLang === currentLang || 
+                       tLang.substring(0, 2) === currentLang.substring(0, 2);
+            });
+        }
+        
+        // Fallback to first translation
+        if (!translation && translations.length > 0) {
+            translation = translations[0];
+        }
+        
+        if (!translation) return;
+        
+        // Get translation properties (check both PascalCase and camelCase)
+        const name = translation.Name || translation.name || 'Sản phẩm';
+        // Try Description first, then Content as fallback (similar to Article/Event)
+        const description = translation.Description || translation.description || 
+                          translation.Content || translation.content || '';
+        
+        // Update page title
+        if (document.title) {
+            document.title = name + ' - ' + (document.title.split(' - ')[1] || '');
+        }
+        
+        // Update product name
+        const nameEl = document.getElementById('productName');
+        if (nameEl) {
+            nameEl.textContent = name;
+        }
+        
+        // Update product description - ensure HTML is rendered correctly
+        const descEl = document.getElementById('productDescription');
+        if (descEl) {
+            if (description) {
+                // Use innerHTML to render HTML content from editor
+                descEl.innerHTML = description;
+                descEl.style.display = '';
+            } else {
+                descEl.style.display = 'none';
+            }
+        }
+        
+        // Update product images alt
+        const mainImg = document.getElementById('mainProductImage');
+        if (mainImg) {
+            mainImg.alt = name;
+        }
+        
+        // Update thumbnails alt
+        document.querySelectorAll('.product-thumbnail-item img').forEach(img => {
+            img.alt = name;
+        });
+        
+        // Update related products title
+        updateRelatedProductsTitle();
+        
+        // Reload related products with new language
+        loadRelatedProducts();
+    }
+    
+    async function loadRelatedProducts() {
+        const relatedProductsSection = document.getElementById('relatedProductsSection');
+        const relatedProductsContainer = document.getElementById('relatedProductsContainer');
+        
+        if (!relatedProductsSection || !relatedProductsContainer) return;
+        
+        // Use existing productData from global scope (already loaded from server)
+        // Get CategoryIds from productData (check both PascalCase and camelCase)
+        const categoryIds = productData?.CategoryIds || productData?.categoryIds || [];
+        const currentProductId = String(productData?.Id || productData?.id || '');
+        
+        if (!categoryIds || categoryIds.length === 0) {
+            return; // No categories, no related products
+        }
+        
+        // Get current language
+        let langCode = localStorage.getItem('selectedLanguage') || '@currentLang' || 'vi';
+        
+        try {
+            // Load products from categories sequentially until we have 12 items
+            const allProducts = [];
+            const seenProductIds = new Set();
+            const MAX_PRODUCTS = 12;
+            
+            // Load products from each category sequentially (no langCode - get all translations)
+            for (const categoryId of categoryIds) {
+                // Stop if we already have enough products
+                if (allProducts.length >= MAX_PRODUCTS) {
+                    break;
+                }
+                
+                try {
+                    // Calculate how many more products we need
+                    const remaining = MAX_PRODUCTS - allProducts.length;
+                    const pageSize = Math.min(remaining + 5, 12); // Load a bit more to account for filtering
+                    
+                    const response = await fetch(`/api/Portal/products?categoryId=${encodeURIComponent(categoryId)}&pageNumber=1&pageSize=${pageSize}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.items && Array.isArray(data.items)) {
+                            // Process items from this category
+                            for (const item of data.items) {
+                                // Stop if we have enough products
+                                if (allProducts.length >= MAX_PRODUCTS) {
+                                    break;
+                                }
+                                
+                                // Convert item ID to string for comparison
+                                const itemId = String(item.id || '');
+                                
+                                // Skip current product and duplicates, only published products
+                                if (itemId !== currentProductId && 
+                                    !seenProductIds.has(itemId) && 
+                                    item.published) {
+                                    seenProductIds.add(itemId);
+                                    allProducts.push(item);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    // Error loading products from category, continue to next category
+                    continue;
+                }
+            }
+            
+            // Sort by DateAdd (newest first) and take exactly 12
+            const sortedProducts = allProducts
+                .sort((a, b) => {
+                    const dateA = a.dateAdd ? new Date(a.dateAdd) : new Date(0);
+                    const dateB = b.dateAdd ? new Date(b.dateAdd) : new Date(0);
+                    return dateB - dateA;
+                })
+                .slice(0, MAX_PRODUCTS);
+            
+            if (sortedProducts.length === 0) {
+                return;
+            }
+            
+            // Render related products - use current language from localStorage
+            const currentLang = localStorage.getItem('selectedLanguage') || langCode || 'vi';
+            renderRelatedProducts(sortedProducts, currentLang, '@pageSlug');
+            
+            // Show section
+            relatedProductsSection.style.display = 'block';
+        } catch (error) {
+            // Error loading related products
+        }
+    }
+    
+    function renderRelatedProducts(products, langCode, pageSlug) {
+        const relatedProductsContainer = document.getElementById('relatedProductsContainer');
+        if (!relatedProductsContainer) return;
+        
+        relatedProductsContainer.innerHTML = '';
+        relatedProductsContainer.setAttribute('data-view', relatedProductsView);
+        
+        // Always get current language from localStorage (not from parameter)
+        const currentLang = localStorage.getItem('selectedLanguage') || langCode || 'vi';
+        
+        products.forEach(product => {
+            // Find translation matching current language
+            let translation = null;
+            if (product.translations && Array.isArray(product.translations)) {
+                // First try exact match (check both PascalCase and camelCase)
+                translation = product.translations.find(t => {
+                    const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                    return tLang === currentLang.toLowerCase();
+                });
+                
+                // If no exact match, try language code prefix
+                if (!translation) {
+                    translation = product.translations.find(t => {
+                        const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                        const lang = currentLang.toLowerCase();
+                        return tLang.substring(0, 2) === lang.substring(0, 2);
+                    });
+                }
+                
+                // Fallback to first translation
+                if (!translation && product.translations.length > 0) {
+                    translation = product.translations[0];
+                }
+            }
+            
+            if (!translation) return;
+            
+            // Get translation properties (check both PascalCase and camelCase)
+            const productId = product.id || product.Id || '';
+            const urlSlug = translation.urlSlug || translation.UrlSlug || '';
+            const name = translation.name || translation.Name || '';
+            // Try description first, then content as fallback
+            const description = translation.description || translation.Description || 
+                              translation.content || translation.Content || '';
+            const images = product.images || product.Images || [];
+            const image = images.length > 0 ? images[0] : '';
+            const price = product.price || product.Price || 0;
+            const discountPrice = product.discountPrice || product.DiscountPrice;
+            
+            // Generate link - always use direct route format: /product/{slug}
+            const defaultSlug = urlSlug || 'product'; // Use 'product' as default if no urlSlug
+            const link = `/product/${defaultSlug}`;
+            
+            // Render HTML description directly (CSS will handle truncation)
+            const descriptionHtml = description || '';
+            
+            let priceHtml = '';
+            if (discountPrice && discountPrice < price) {
+                priceHtml = `
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-danger fw-bold">${formatPrice(discountPrice)} đ</span>
+                        <span class="text-muted text-decoration-line-through small">${formatPrice(price)} đ</span>
+                    </div>
+                `;
+            } else if (price) {
+                priceHtml = `<span class="text-primary fw-bold">${formatPrice(price)} đ</span>`;
+            }
+            
+            // Create product item (no Bootstrap grid wrapper - use CSS Grid)
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'related-post-item';
+            
+            itemDiv.innerHTML = `
+                ${image ? `<div class="related-post-media"><img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" class="related-post-image" onerror="this.parentElement.style.display='none'"></div>` : ''}
+                <div class="related-post-body">
+                    <h4 class="related-post-title">
+                        <a href="${escapeHtml(link)}">${escapeHtml(name)}</a>
+                    </h4>
+                    ${descriptionHtml ? `<div class="related-post-summary">${descriptionHtml}</div>` : ''}
+                    <div class="related-post-meta${priceHtml ? ' has-price' : ''}">
+                        ${priceHtml ? `<div style="flex-grow: 1;">${priceHtml}</div>` : ''}
+                        <a href="${escapeHtml(link)}" class="heritage-btn-continue">${escapeHtml(t('viewContinue') || t('viewDetails'))}</a>
+                    </div>
+                </div>
+            `;
+            
+            relatedProductsContainer.appendChild(itemDiv);
+        });
+    }
+    
+    function formatPrice(price) {
+        return new Intl.NumberFormat('vi-VN').format(price);
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+
+<script>
+    // Initialize product images
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeProductImages();
+    });
+    
+    function initializeProductImages() {
+        const images = productData?.Images || productData?.images || [];
+        
+        if (images && images.length > 0) {
+            // Show main image
+            const mainImg = document.getElementById('mainProductImage');
+            const noImageMsg = document.getElementById('noImageMessage');
+            const thumbnailsContainer = document.getElementById('productThumbnails');
+            
+            if (mainImg) {
+                mainImg.src = images[0];
+                mainImg.style.display = 'block';
+            }
+            
+            if (noImageMsg) {
+                noImageMsg.style.display = 'none';
+            }
+            
+            // Show and populate thumbnails if more than 1 image
+            if (images.length > 1 && thumbnailsContainer) {
+                thumbnailsContainer.style.display = 'grid';
+                thumbnailsContainer.innerHTML = '';
+                
+                images.forEach((imgUrl, index) => {
+                    const thumbnailItem = document.createElement('div');
+                    thumbnailItem.className = 'product-thumbnail-item' + (index === 0 ? ' active' : '');
+                    thumbnailItem.setAttribute('data-image-index', index);
+                    thumbnailItem.onclick = function() {
+                        changeMainImage(imgUrl, index);
+                    };
+                    
+                    const img = document.createElement('img');
+                    img.src = imgUrl;
+                    img.alt = productData?.Translations?.[0]?.Name || 'Product image';
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                    };
+                    
+                    thumbnailItem.appendChild(img);
+                    thumbnailsContainer.appendChild(thumbnailItem);
+                });
+            } else if (thumbnailsContainer) {
+                thumbnailsContainer.style.display = 'none';
+            }
+        } else {
+            // No images - show message
+            const mainImg = document.getElementById('mainProductImage');
+            const noImageMsg = document.getElementById('noImageMessage');
+            const thumbnailsContainer = document.getElementById('productThumbnails');
+            
+            if (mainImg) {
+                mainImg.style.display = 'none';
+            }
+            
+            if (noImageMsg) {
+                noImageMsg.style.display = 'block';
+            }
+            
+            if (thumbnailsContainer) {
+                thumbnailsContainer.style.display = 'none';
+            }
+        }
+    }
+    
+    function changeMainImage(imageUrl, imageIndex) {
+        const mainImg = document.getElementById('mainProductImage');
+        if (mainImg) {
+            mainImg.src = imageUrl;
+            mainImg.style.display = 'block';
+        }
+        
+        // Update active thumbnail
+        document.querySelectorAll('.product-thumbnail-item').forEach((item, index) => {
+            if (index === imageIndex) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+</script>
+

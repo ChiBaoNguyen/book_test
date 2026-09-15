@@ -1,0 +1,380 @@
+@{
+    var settings = await ApiService.GetSettingsAsync();
+    var companyName = settings?.GetValueOrDefault("company_name", "") 
+        ?? settings?.GetValueOrDefault("company", "") 
+        ?? settings?.GetValueOrDefault("brandName", "") 
+        ?? settings?.GetValueOrDefault("SITE_NAME", "Website") ?? "Website";
+    var copyrightText = settings?.GetValueOrDefault("COPYRIGHT_TEXT", "");
+    var versionText = settings?.GetValueOrDefault("VERSION_TEXT", "");
+}
+
+<footer class="heritage-footer footer">
+    <div class="container mx-auto px-4 px-sm-5 px-lg-4 py-5">
+        <!-- Footer content will be loaded here -->
+        <div id="footerContent">
+            <div class="text-center mb-4 footer-muted" id="footerLoadingText">Đang tải footer...</div>
+        </div>
+        
+        @* Bottom Bar *@
+        <div class="border-top pt-4 mt-4 footer-border-top">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div class="d-flex flex-column flex-md-row align-items-center gap-2 gap-md-4">
+                    <p class="small mb-0 footer-muted">
+                        @(copyrightText ?? $"© {DateTime.Now.Year} {companyName}. Tất cả quyền được bảo lưu.")
+                    </p>
+                    @if (!string.IsNullOrEmpty(versionText))
+                    {
+                        <p class="small mb-0 footer-muted">@versionText</p>
+                    }
+                </div>
+                <div>
+                    @{
+                        ViewData["Settings"] = settings;
+                    }
+                    @await Html.PartialAsync("_SocialIcons")
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Bootstrap Icons CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<script>
+    // Language translations
+    let footerTranslations = {};
+    let footerDefaultLang = 'vi';
+    const FOOTER_BG_BANNER_CODE = 'FooterBG';
+    
+    // Load translations
+    async function loadFooterTranslations() {
+        try {
+            const response = await fetch('/locales/page.json');
+            if (response.ok) {
+                const data = await response.json();
+                footerDefaultLang = data.default || 'vi';
+                footerTranslations = data;
+            }
+        } catch (error) {
+            // Error loading footer translations
+        }
+    }
+    
+    // Get translation by key
+    function t(key) {
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+        // Kiểm tra xem có key ngôn ngữ nào trong file JSON trùng với langCode không
+        if (langCode && footerTranslations[langCode]) {
+            // Nếu có key ngôn ngữ trùng với langCode thì ưu tiên dùng nó
+            // Nếu key cụ thể không có thì fallback về default cho key đó
+            return footerTranslations[langCode][key] || footerTranslations[footerDefaultLang]?.[key] || key;
+        }
+        // Chỉ khi không có key ngôn ngữ nào trùng với langCode thì mới dùng default
+        return footerTranslations[footerDefaultLang]?.[key] || key;
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Load translations first
+        await loadFooterTranslations();
+        
+        // Update initial loading text
+        const footerLoadingText = document.getElementById('footerLoadingText');
+        if (footerLoadingText) {
+            footerLoadingText.textContent = t('footerLoading');
+        }
+        
+        // Load footer
+        loadFooterBackground();
+        loadFooter();
+        
+        // Listen for language change events
+        window.addEventListener('languageChanged', async function(event) {
+            await loadFooterTranslations();
+            loadFooter();
+        });
+    });
+
+    async function loadFooterBackground() {
+        const footer = document.querySelector('.heritage-footer');
+        if (!footer) return;
+
+        try {
+            const response = await fetch('/api/Portal/banners/code/' + encodeURIComponent(FOOTER_BG_BANNER_CODE));
+            if (!response.ok) return;
+
+            const banner = await response.json();
+            const imageUrl = (banner.image || banner.Image || '').trim();
+            if (!imageUrl) return;
+
+            footer.style.setProperty('--footer-bg-url', `url("${imageUrl.replace(/"/g, '\\"')}")`);
+            footer.classList.add('has-bg-image');
+        } catch (error) {
+            // Keep default footer background
+        }
+    }
+
+    async function loadFooter() {
+        const footerContent = document.getElementById('footerContent');
+        if (!footerContent) return;
+
+        // Get current language from localStorage
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+
+        try {
+            // Fetch active footers
+            const response = await fetch('/api/Portal/footers/active');
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                footerContent.innerHTML = `<div class="text-center mb-4" style="color: rgba(255, 255, 255, 0.7);">${t('noFooterConfigured')}</div>`;
+                return;
+            }
+
+            const footers = await response.json();
+            
+            if (!footers || !Array.isArray(footers) || footers.length === 0) {
+                footerContent.innerHTML = `<div class="text-center mb-4" style="color: rgba(255, 255, 255, 0.7);">${t('noFooterConfigured')}</div>`;
+                return;
+            }
+
+            // API already returns only active footers, so just sort by SortOrder (left to right)
+            const activeFooters = footers
+                .filter(f => f.isActive !== false && f.deleted !== true) // Extra safety check
+                .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+            if (activeFooters.length === 0) {
+                footerContent.innerHTML = `<div class="text-center mb-4" style="color: rgba(255, 255, 255, 0.7);">${t('noFooterConfigured')}</div>`;
+                return;
+            }
+
+            // Build footer HTML
+            let footerHTML = '<div class="row g-4 mb-4">';
+            
+            activeFooters.forEach(footer => {
+                // Get translation matching current language (exact match only)
+                let translation = null;
+                if (footer.translations && Array.isArray(footer.translations)) {
+                    // First try exact match
+                    translation = footer.translations.find(t => 
+                        (t.languageCode || '').toLowerCase() === langCode.toLowerCase()
+                    );
+                    
+                    // If no exact match, try language code prefix (e.g., 'en' matches 'en-US')
+                    if (!translation) {
+                        translation = footer.translations.find(t => {
+                            const tLang = (t.languageCode || '').toLowerCase();
+                            const currentLang = langCode.toLowerCase();
+                            return tLang === currentLang || 
+                                   tLang.substring(0, 2) === currentLang.substring(0, 2);
+                        });
+                    }
+                }
+
+                // Skip footer if no translation found for current language
+                if (!translation) return;
+
+                footerHTML += '<div class="col-12 col-md-6 col-lg-3">';
+
+                if (footer.footerType === 'FreeText') {
+                    footerHTML += `<h5 class="mb-3" style="font-size: 1rem; font-weight: 600; color: #ffffff;">${escapeHtml(translation.title || '')}</h5>`;
+                    if (translation.freeText) {
+                        // Remove mailto: and tel: links
+                        let freeText = translation.freeText
+                            .replace(/<a\s+[^>]*href\s*=\s*["']?mailto:[^"'>]*["']?[^>]*>(.*?)<\/a>/gi, '$1')
+                            .replace(/<a\s+[^>]*href\s*=\s*["']?tel:[^"'>]*["']?[^>]*>(.*?)<\/a>/gi, '$1');
+                        footerHTML += `<div class="small" style="line-height: 1.6; color: rgba(255, 255, 255, 0.7);">${freeText}</div>`;
+                    }
+                } else if (footer.footerType === 'MenuList' && footer.menus && Array.isArray(footer.menus) && footer.menus.length > 0) {
+                    footerHTML += `<h5 class="mb-3" style="font-size: 1rem; font-weight: 600; color: #ffffff;">${escapeHtml(translation.title || '')}</h5>`;
+                    footerHTML += '<ul class="list-unstyled d-flex flex-column gap-2">';
+                    
+                    footer.menus.forEach(menu => {
+                        let menuTranslation = null;
+                        if (menu.translations && Array.isArray(menu.translations)) {
+                            // First try exact match
+                            menuTranslation = menu.translations.find(t => 
+                                (t.languageCode || '').toLowerCase() === langCode.toLowerCase()
+                            );
+                            
+                            // If no exact match, try language code prefix
+                            if (!menuTranslation) {
+                                menuTranslation = menu.translations.find(t => {
+                                    const tLang = (t.languageCode || '').toLowerCase();
+                                    const currentLang = langCode.toLowerCase();
+                                    return tLang === currentLang || 
+                                           tLang.substring(0, 2) === currentLang.substring(0, 2);
+                                });
+                            }
+                            
+                            // Fallback to first translation
+                            if (!menuTranslation && menu.translations.length > 0) {
+                                menuTranslation = menu.translations[0];
+                            }
+                        }
+                        
+                        if (!menuTranslation) return;
+
+                        // Parse useLink - normalize to boolean
+                        const useLinkRaw = menu.useLink !== undefined ? menu.useLink : (menu.uselink !== undefined ? menu.uselink : false);
+                        const useLink = useLinkRaw === true || useLinkRaw === 'true' || useLinkRaw === 1 || useLinkRaw === '1';
+                        
+                        // Parse linkType - normalize to lowercase
+                        const linkTypeRaw = menu.linkType || menu.linktype || '';
+                        const linkType = linkTypeRaw ? String(linkTypeRaw).toLowerCase().trim() : 'internal';
+                        
+                        // Parse linkTarget
+                        const linkTargetRaw = menu.linkTarget || menu.linktarget || '';
+                        const linkTarget = linkTargetRaw ? String(linkTargetRaw).trim() : '';
+                        
+                        // Parse showSinglePost and singlePostId
+                        const showSinglePostRaw = menu.showSinglePost !== undefined ? menu.showSinglePost : (menu.showsinglepost !== undefined ? menu.showsinglepost : false);
+                        const showSinglePost = showSinglePostRaw === true || showSinglePostRaw === 'true' || showSinglePostRaw === 1 || showSinglePostRaw === '1';
+                        const singlePostId = menu.singlePostId || menu.singlepostid || null;
+                        
+                        let menuUrl = '#';
+                        let targetAttr = '';
+                        
+                        // Priority 1: If useLink = true, use linkTarget and check linkType for target, add slug for SEO
+                        if (useLink && linkTarget) {
+                            // Get urlSlug from translation for SEO
+                            const urlSlug = menuTranslation.urlSlug || '';
+                            
+                            // Use linkTarget directly when useLink is true
+                            if (linkType === 'internal') {
+                                // Internal link - add domain if not already present
+                                let baseUrl = '';
+                                if (linkTarget.startsWith('http://') || linkTarget.startsWith('https://')) {
+                                    // Already has protocol, use as is
+                                    baseUrl = linkTarget;
+                                } else if (linkTarget.startsWith('/')) {
+                                    // Relative path starting with /, add domain
+                                    baseUrl = window.location.origin + linkTarget;
+                                } else {
+                                    // Relative path without /, add domain and /
+                                    baseUrl = window.location.origin + '/' + linkTarget;
+                                }
+                                
+                                // Add slug to link for SEO (as query parameter if URL has query, otherwise append to path)
+                                if (urlSlug && urlSlug.trim()) {
+                                    const slug = urlSlug.trim();
+                                    if (baseUrl.includes('?')) {
+                                        // URL already has query parameters, add slug as additional parameter
+                                        menuUrl = baseUrl + '&s=' + encodeURIComponent(slug);
+                                    } else {
+                                        // No query parameters, add slug as query parameter
+                                        menuUrl = baseUrl + '?s=' + encodeURIComponent(slug);
+                                    }
+                                } else {
+                                    menuUrl = baseUrl;
+                                }
+                                // Internal link - load in current tab (no target attribute)
+                                targetAttr = '';
+                            } else {
+                                // External link - use linkTarget as is and add slug for SEO
+                                let baseUrl = linkTarget.startsWith('http://') || linkTarget.startsWith('https://') 
+                                    ? linkTarget 
+                                    : (linkTarget.startsWith('/') ? linkTarget : '/' + linkTarget);
+                                
+                                // Add slug to external link for SEO
+                                if (urlSlug && urlSlug.trim()) {
+                                    const slug = urlSlug.trim();
+                                    if (baseUrl.includes('?')) {
+                                        menuUrl = baseUrl + '&s=' + encodeURIComponent(slug);
+                                    } else {
+                                        menuUrl = baseUrl + '?s=' + encodeURIComponent(slug);
+                                    }
+                                } else {
+                                    menuUrl = baseUrl;
+                                }
+                                // External link - open in new tab
+                                targetAttr = 'target="_blank" rel="noopener noreferrer"';
+                            }
+                        } 
+                        // Priority 2: If showSinglePost = true and has singlePostId, return /content/{slug}
+                        else if (showSinglePost && singlePostId) {
+                            // Use urlSlug from API response (singlePostTranslations is already included in menu response from GetActiveFooters)
+                            let slug = singlePostId; // Default to ID
+                            
+                            // Priority 1: Get urlSlug from singlePostTranslations based on current language
+                            const singlePostTranslations = menu.singlePostTranslations || menu.singleposttranslations || null;
+                            if (singlePostTranslations && Array.isArray(singlePostTranslations) && singlePostTranslations.length > 0) {
+                                const currentLang = langCode.toLowerCase().trim();
+                                
+                                // Find translation for current language
+                                let foundTranslation = singlePostTranslations.find(t => 
+                                    t.languageCode && String(t.languageCode).toLowerCase().trim() === currentLang
+                                );
+                                
+                                // If not found, try 2-char prefix match
+                                if (!foundTranslation) {
+                                    foundTranslation = singlePostTranslations.find(t => 
+                                        t.languageCode && String(t.languageCode).toLowerCase().trim().substring(0, 2) === currentLang.substring(0, 2)
+                                    );
+                                }
+                                
+                                // If still not found, use first translation
+                                if (!foundTranslation) {
+                                    foundTranslation = singlePostTranslations[0];
+                                }
+                                
+                                // Get urlSlug from translation (handle both camelCase and lowercase)
+                                const urlSlug = foundTranslation.urlSlug || foundTranslation.urlslug || null;
+                                if (urlSlug && String(urlSlug).trim()) {
+                                    slug = String(urlSlug).trim();
+                                }
+                            }
+                            
+                            // Priority 2: Fallback to generate slug from menu translation title
+                            if (slug === singlePostId && menuTranslation && menuTranslation.title) {
+                                // Simple slug generation function
+                                slug = menuTranslation.title
+                                    .toString()
+                                    .normalize('NFD')
+                                    .replace(/[\u0300-\u036f]/g, '')
+                                    .toLowerCase()
+                                    .replace(/[^a-z0-9\s-]/g, '')
+                                    .trim()
+                                    .replace(/\s+/g, '-')
+                                    .replace(/-+/g, '-')
+                                    .replace(/^-+|-+$/g, '');
+                            }
+                            
+                            menuUrl = '/content/' + slug;
+                            targetAttr = '';
+                        } 
+                        // Priority 3: Original logic when useLink is false and no singlePost
+                        else {
+                            menuUrl = linkType === 'external' ? linkTarget 
+                                : (menuTranslation.urlSlug ? `/${menuTranslation.urlSlug.trim().replace(/^\//, '')}` : '#');
+                            targetAttr = linkType === 'external' ? 'target="_blank" rel="noopener noreferrer"' : '';
+                        }
+                        
+                        footerHTML += `<li>
+                            <a href="${menuUrl}" class="text-decoration-none small" style="color: rgba(255, 255, 255, 0.7); transition: color 0.15s;" ${targetAttr}>
+                                ${escapeHtml(menuTranslation.title || '')}
+                            </a>
+                        </li>`;
+                    });
+                    
+                    footerHTML += '</ul>';
+                }
+
+                footerHTML += '</div>';
+            });
+
+            footerHTML += '</div>';
+            footerContent.innerHTML = footerHTML;
+
+        } catch (error) {
+            footerContent.innerHTML = `<div class="text-center mb-4" style="color: rgba(255, 255, 255, 0.7);">${t('footerLoadingError')}</div>`;
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>

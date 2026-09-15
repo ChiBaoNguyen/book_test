@@ -1,0 +1,1102 @@
+﻿@{
+    var book = ViewBag.Book as CreativeWeb.Controllers.BookDto;
+    var pageSlug = ViewBag.PageSlug as string ?? "";
+    // Get language from query string or cookie
+    var currentLang = Context.Request.Query["lang"].ToString();
+    if (string.IsNullOrWhiteSpace(currentLang))
+    {
+        currentLang = Context.Request.Cookies["selectedLanguage"] ?? "vi";
+    }
+    
+    var translation = book?.Translations?.FirstOrDefault(t => t.LanguageCode == currentLang)
+        ?? book?.Translations?.FirstOrDefault();
+    
+    ViewData["Title"] = translation?.Title ?? "SÃ¡ch";
+    var bookTitle = translation?.Title ?? "SÃ¡ch";
+    var bookSummary = translation?.Summary ?? "";
+    var bookContent = translation?.Content ?? translation?.Description ?? "";
+    var bookThumbnail = book?.Thumbnail ?? "";
+    var categoryName = book?.CategoryName ?? "";
+    var isbn = book?.ISBN ?? "";
+    var author = book?.Author ?? "";
+    var publisher = book?.Publisher ?? "";
+    var publishYear = book?.PublishYear;
+    var pageCount = book?.PageCount;
+    var tags = book?.Tags ?? "";
+    var pdfFile = book?.PdfFile ?? "";
+}
+
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-4">
+            @if (!string.IsNullOrWhiteSpace(bookThumbnail))
+            {
+                <div class="book-thumbnail mb-4">
+                    <img src="@bookThumbnail" alt="@bookTitle" class="img-fluid rounded shadow" />
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(pdfFile))
+            {
+                <div class="book-actions mb-4">
+                    <button type="button" class="btn btn-primary btn-lg w-100" id="btnOpenFlipbook" onclick="openFlipbook()">
+                        <i class="bi bi-book"></i> <span id="readBookText">Äá»c sÃ¡ch</span>
+                    </button>
+                </div>
+            }
+        </div>
+        <div class="col-md-8">
+            <div class="book-content">
+                @if (!string.IsNullOrWhiteSpace(bookTitle))
+                {
+                    <h1 class="mb-3" id="bookTitle">@bookTitle</h1>
+                }
+                
+                <div class="book-meta mb-4">
+                    @if (!string.IsNullOrWhiteSpace(author))
+                    {
+                        <p class="mb-2"><strong id="authorLabel">TÃ¡c giáº£:</strong> @author</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(publisher))
+                    {
+                        <p class="mb-2"><strong id="publisherLabel">NhÃ  xuáº¥t báº£n:</strong> @publisher</p>
+                    }
+                    @if (publishYear.HasValue)
+                    {
+                        <p class="mb-2"><strong id="publishYearLabel">NÄƒm xuáº¥t báº£n:</strong> @publishYear.Value</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(isbn))
+                    {
+                        <p class="mb-2"><strong id="isbnLabel">ISBN:</strong> @isbn</p>
+                    }
+                    @if (pageCount.HasValue)
+                    {
+                        <p class="mb-2"><strong id="pageCountLabel">Sá»‘ trang:</strong> @pageCount.Value</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(categoryName))
+                    {
+                        <p class="mb-2"><strong id="categoryLabel">Danh má»¥c:</strong> <span id="bookCategory">@categoryName</span></p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(tags))
+                    {
+                        <p class="mb-2"><strong id="tagsLabel">Tags:</strong> @tags</p>
+                    }
+                </div>
+                
+                @if (!string.IsNullOrWhiteSpace(bookSummary))
+                {
+                    <div class="book-summary mb-4 p-3 bg-light rounded" id="bookSummary">
+                        @Html.Raw(bookSummary)
+                    </div>
+                }
+                
+                @if (!string.IsNullOrWhiteSpace(bookContent))
+                {
+                    <div class="content-body" id="bookContent">
+                        @Html.Raw(bookContent)
+                    </div>
+                }
+                else
+                {
+                    <div class="content-body" id="bookContent">
+                        <p class="text-muted" id="contentUpdatingText">Ná»™i dung Ä‘ang Ä‘Æ°á»£c cáº­p nháº­t...</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    @if (!string.IsNullOrWhiteSpace(pdfFile))
+    {
+        <!-- PDF FlipBook Section -->
+        <div class="pdf-flipbook-section mt-5 mb-5" id="pdfFlipbookSection" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0" id="readBookTitle">Äá»c sÃ¡ch</h3>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleFullscreen()" id="btnFullscreen">
+                        <i class="bi bi-fullscreen"></i> <span id="fullscreenText">ToÃ n mÃ n hÃ¬nh</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeFlipbook()">
+                        <i class="bi bi-x-lg"></i> <span id="closeText">ÄÃ³ng</span>
+                    </button>
+                </div>
+            </div>
+            <div class="sample-container-box">
+                <div class="sample-container" style="width: 100%; height: 90vh;"></div>
+                <button type="button" class="fullscreen-close-btn" id="fullscreenCloseBtn" onclick="toggleFullscreen()" title="ThoÃ¡t toÃ n mÃ n hÃ¬nh (ESC)">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    }
+    
+    <!-- Related Books Section -->
+    <div class="related-posts mt-5" id="relatedBooksSection" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="mb-0" id="relatedBooksTitle">SÃ¡ch liÃªn quan</h3>
+            <div class="view-toggle view-toggle-books">
+                <button class="btn btn-xs btn-outline-secondary active" data-view="grid" id="gridViewBtn" title="">
+                    <i class="bi bi-grid" style="font-size: 0.875rem;"></i>
+                </button>
+                <button class="btn btn-xs btn-outline-secondary" data-view="list" id="listViewBtn" title="">
+                    <i class="bi bi-list" style="font-size: 0.875rem;"></i>
+                </button>
+            </div>
+        </div>
+        <div id="relatedBooksContainer" class="related-books-container" data-view="grid">
+            <!-- Related books will be loaded here -->
+        </div>
+    </div>
+</div>
+
+
+<link rel="stylesheet" href="~/book/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous">
+
+<script>
+    // Store book data with all translations
+    const bookData = @Html.Raw(Json.Serialize(new {
+        Id = book?.Id,
+        Thumbnail = book?.Thumbnail,
+        PdfFile = book?.PdfFile,
+        CategoryName = book?.CategoryName,
+        CategoryIds = book?.CategoryIds ?? new List<string>(),
+        Translations = book?.Translations
+    }));
+    
+    // Debug: Log book data
+    
+    // Language translations
+    let bookTranslations = {};
+    let bookDefaultLang = 'vi';
+    
+    // Load translations
+    async function loadBookTranslations() {
+        try {
+            const response = await fetch('/locales/page.json');
+            if (response.ok) {
+                const data = await response.json();
+                bookDefaultLang = data.default || 'vi';
+                bookTranslations = data;
+            }
+        } catch (error) {
+            // Error loading book translations
+        }
+    }
+    
+    // Get translation by key
+    function t(key) {
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+        if (langCode && bookTranslations[langCode]) {
+            return bookTranslations[langCode][key] || bookTranslations[bookDefaultLang]?.[key] || key;
+        }
+        return bookTranslations[bookDefaultLang]?.[key] || key;
+    }
+    
+    // Update related books title
+    function updateRelatedBooksTitle() {
+        // Ensure translations are loaded
+        if (Object.keys(bookTranslations).length === 0) {
+            // If translations not loaded yet, wait a bit and try again
+            setTimeout(() => {
+                updateRelatedBooksTitle();
+            }, 50);
+            return;
+        }
+        
+        const titleEl = document.getElementById('relatedBooksTitle');
+        if (titleEl) {
+            const titleText = t('relatedBooks');
+            titleEl.textContent = titleText;
+        } else {
+            // Element not found, wait a bit and try again
+            setTimeout(() => {
+                updateRelatedBooksTitle();
+            }, 50);
+        }
+    }
+    
+    // Update all book UI texts
+    function updateBookUITexts() {
+        // Ensure translations are loaded
+        if (Object.keys(bookTranslations).length === 0) {
+            // If translations not loaded yet, wait a bit and try again
+            setTimeout(() => {
+                updateBookUITexts();
+            }, 50);
+            return;
+        }
+        
+        // Update button texts
+        const readBookText = document.getElementById('readBookText');
+        if (readBookText) {
+            readBookText.textContent = t('readBook');
+        }
+        
+        const readBookTitle = document.getElementById('readBookTitle');
+        if (readBookTitle) {
+            readBookTitle.textContent = t('readBook');
+        }
+        
+        const fullscreenText = document.getElementById('fullscreenText');
+        if (fullscreenText) {
+            const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+            fullscreenText.textContent = isFullscreen ? t('exitFullscreen') : t('fullscreen');
+        }
+        
+        const closeText = document.getElementById('closeText');
+        if (closeText) {
+            closeText.textContent = t('close');
+        }
+        
+        // Update meta labels
+        const authorLabel = document.getElementById('authorLabel');
+        if (authorLabel) {
+            authorLabel.textContent = t('author') + ':';
+        }
+        
+        const publisherLabel = document.getElementById('publisherLabel');
+        if (publisherLabel) {
+            publisherLabel.textContent = t('publisher') + ':';
+        }
+        
+        const publishYearLabel = document.getElementById('publishYearLabel');
+        if (publishYearLabel) {
+            publishYearLabel.textContent = t('publishYear') + ':';
+        }
+        
+        const isbnLabel = document.getElementById('isbnLabel');
+        if (isbnLabel) {
+            isbnLabel.textContent = t('isbn') + ':';
+        }
+        
+        const pageCountLabel = document.getElementById('pageCountLabel');
+        if (pageCountLabel) {
+            pageCountLabel.textContent = t('pageCount') + ':';
+        }
+        
+        const categoryLabel = document.getElementById('categoryLabel');
+        if (categoryLabel) {
+            categoryLabel.textContent = t('category') + ':';
+        }
+        
+        const tagsLabel = document.getElementById('tagsLabel');
+        if (tagsLabel) {
+            tagsLabel.textContent = t('tags') + ':';
+        }
+        
+        // Update view toggle buttons
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        if (gridViewBtn) {
+            gridViewBtn.title = t('gridView');
+        }
+        
+        const listViewBtn = document.getElementById('listViewBtn');
+        if (listViewBtn) {
+            listViewBtn.title = t('listView');
+        }
+    }
+    
+    let flipbookInitialized = false;
+    let flipbookInitAttempts = 0;
+    const MAX_INIT_ATTEMPTS = 20; // Maximum 10 seconds (20 * 500ms)
+    
+    // Embed JS inline to avoid loading from file
+    // This is the init function for default-book-view
+    const FLIPBOOK_DEFAULT_VIEW_JS = `function init(container) {
+  var instance;
+  if(window.jQuery) {
+    var $ = window.jQuery, jDoc = $(container[0].ownerDocument), view = container.find('.view'), canvas = view.find('canvas');
+
+    function toggleMenu(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var el = $(e.target);
+      while(!el.hasClass('menu-toggle')) {
+        el = $(el[0].parentNode);
+      }
+      var menu = $(el[0].parentNode).find('.v-menu');
+      if(menu.hasClass('hidden')) {
+        menu.removeClass('hidden');
+        el.addClass('active');
+      }
+      else {
+        menu.addClass('hidden');
+        el.removeClass('active');
+      }
+    }
+    function hideDropMenu() {
+      container.find('.v-menu').addClass('hidden');
+      container.find('.menu-toggle').removeClass('active');
+    }
+
+    function pickFloatWnd(e) {
+      if(instance.pos) {
+        dropFloatWnd();
+      }
+      else {
+        instance.floatWnd = $(e.target);
+        while(!instance.floatWnd.hasClass('float-wnd')) {
+          instance.floatWnd = $(instance.floatWnd[0].parentNode);
+        }
+        instance.pos = {
+          x: e.pageX,
+          y: e.pageY
+        };
+      }
+    }
+    function moveFloatWnd(e) {
+      if(instance.pos) {
+        e.preventDefault();
+        var dv = {
+          x: e.pageX-instance.pos.x,
+          y: e.pageY-instance.pos.y
+        }, old = {
+          x: parseInt(instance.floatWnd.css('left')),
+          y: parseInt(instance.floatWnd.css('top'))
+        };
+        instance.floatWnd.css('left', old.x+dv.x+'px').css('top', old.y+dv.y+'px');
+        instance.pos = {
+          x: e.pageX,
+          y: e.pageY
+        };
+      }
+    }
+    function dropFloatWnd() {
+      delete instance.pos;
+      delete instance.floatWnd;
+    }
+
+    instance = {
+      dispose: function() {
+        container.find('.menu-toggle').off('click', toggleMenu);
+        jDoc.off('click', hideDropMenu);
+        jDoc.off('mousemove', moveFloatWnd);
+        jDoc.off('mouseup', dropFloatWnd);
+        container.find('.float-wnd .head').off('mousedown', pickFloatWnd);
+      },
+      appLoaded: function(scene) {
+        var hoverHeight = scene.view.getStyleData()['hover-height'] || 0;
+        if(hoverHeight) {
+          scene.ctrl.bookWatcher.setPadding((container.find('.tbox').css('bottom')==='10px'? -1: 1)*(hoverHeight+20));
+        }
+      },
+      linkLoaded: function(link) {
+      }
+    };
+
+    container.find('.menu-toggle').on('click', toggleMenu);
+    jDoc.on('click', hideDropMenu);
+    jDoc.on('mousemove', moveFloatWnd);
+    jDoc.on('mouseup', dropFloatWnd);
+    container.find('.float-wnd .head').on('mousedown', pickFloatWnd);
+  }
+  else {
+    instance = {
+      dispose: function() {
+      }
+    };
+  }
+  return instance;
+}`;
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            // Get current language from localStorage
+            const currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+            
+            // Load translations first
+            await loadBookTranslations();
+            
+            // Update book content based on current language from localStorage
+            updateBookLanguage(currentLang);
+            
+            // Wait a bit to ensure DOM is fully ready and other scripts have run
+            setTimeout(() => {
+                // Update all UI texts (ensure translations are loaded and DOM is ready)
+                updateBookUITexts();
+                
+                // Update content updating text on initial load
+                const updatingTextEl = document.getElementById('contentUpdatingText');
+                if (updatingTextEl) {
+                    updatingTextEl.textContent = t('contentUpdating');
+                }
+                
+                // Update related books title (ensure translations are loaded and DOM is ready)
+                updateRelatedBooksTitle();
+                
+                // Load related books
+                loadRelatedBooks();
+            }, 100);
+            
+            // Don't auto-load PDF flipbook - wait for user to click "Äá»c sÃ¡ch" button
+        } catch (error) {
+            // Error in initialization - don't block other scripts (menu, locales, etc.)
+        }
+        
+        // Listen for language change events (register immediately, but don't block)
+        window.addEventListener('languageChanged', async function(event) {
+            try {
+                const newLang = event.detail?.langCode || 'vi';
+                
+                // Reload translations
+                await loadBookTranslations();
+                
+                // Update all UI texts
+                updateBookUITexts();
+                
+                // Update book content without reload
+                updateBookLanguage(newLang);
+                
+                // Reload related books with new language
+                loadRelatedBooks();
+            } catch (error) {
+                // Error handling language change - don't block other scripts
+            }
+        });
+    });
+    
+    // Open flipbook function (scroll to flipbook section)
+    function openFlipbook() {
+        const flipbookSection = document.getElementById('pdfFlipbookSection');
+        if (!flipbookSection) return;
+        
+        // Show flipbook section
+        flipbookSection.style.display = 'block';
+        flipbookSection.style.visibility = 'visible';
+        flipbookSection.style.opacity = '1';
+        
+        // Scroll to flipbook section
+        setTimeout(() => {
+            flipbookSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        
+        // Initialize flipbook if not already initialized
+        const pdfFile = bookData?.PdfFile || bookData?.pdfFile;
+        if (!flipbookInitialized && bookData && pdfFile) {
+            flipbookInitAttempts = 0; // Reset attempts
+            initializeFlipBook(pdfFile);
+            flipbookInitialized = true;
+        }
+    }
+    
+    // Close flipbook function
+    function closeFlipbook() {
+        const flipbookSection = document.getElementById('pdfFlipbookSection');
+        if (flipbookSection) {
+            flipbookSection.style.display = 'none';
+        }
+    }
+    
+    // Toggle fullscreen function
+    function toggleFullscreen() {
+        const flipbookSection = document.getElementById('pdfFlipbookSection');
+        if (!flipbookSection) return;
+        
+        const mainElement = flipbookSection.querySelector('.sample-container-box');
+        if (!mainElement) return;
+        
+        const btnFullscreen = document.getElementById('btnFullscreen');
+        const fullscreenText = document.getElementById('fullscreenText');
+        const icon = btnFullscreen.querySelector('i');
+        
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+            // Enter fullscreen
+            if (mainElement.requestFullscreen) {
+                mainElement.requestFullscreen();
+            } else if (mainElement.webkitRequestFullscreen) {
+                mainElement.webkitRequestFullscreen();
+            } else if (mainElement.mozRequestFullScreen) {
+                mainElement.mozRequestFullScreen();
+            } else if (mainElement.msRequestFullscreen) {
+                mainElement.msRequestFullscreen();
+            }
+            
+            if (icon) {
+                icon.className = 'bi bi-fullscreen-exit';
+            }
+            if (fullscreenText) {
+                fullscreenText.textContent = t('exitFullscreen');
+            }
+        } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            
+            if (icon) {
+                icon.className = 'bi bi-fullscreen';
+            }
+            if (fullscreenText) {
+                fullscreenText.textContent = t('fullscreen');
+            }
+        }
+    }
+    
+    // Listen for fullscreen changes
+    document.addEventListener('fullscreenchange', updateFullscreenButton);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+    document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+    document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+    
+    // Listen for ESC key to exit fullscreen
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+            if (isFullscreen) {
+                toggleFullscreen();
+            }
+        }
+    });
+    
+    function updateFullscreenButton() {
+        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+        const btnFullscreen = document.getElementById('btnFullscreen');
+        const fullscreenText = document.getElementById('fullscreenText');
+        const icon = btnFullscreen?.querySelector('i');
+        const fullscreenCloseBtn = document.getElementById('fullscreenCloseBtn');
+        
+        if (isFullscreen) {
+            if (icon) {
+                icon.className = 'bi bi-fullscreen-exit';
+            }
+            if (fullscreenText) {
+                fullscreenText.textContent = t('exitFullscreen');
+            }
+            // Show fullscreen close button
+            if (fullscreenCloseBtn) {
+                fullscreenCloseBtn.classList.add('show');
+            }
+        } else {
+            if (icon) {
+                icon.className = 'bi bi-fullscreen';
+            }
+            if (fullscreenText) {
+                fullscreenText.textContent = t('fullscreen');
+            }
+            // Hide fullscreen close button
+            if (fullscreenCloseBtn) {
+                fullscreenCloseBtn.classList.remove('show');
+            }
+        }
+    }
+    
+    // Convert CDN URL to proxy URL to avoid CORS issues
+    function getProxyUrl(cdnUrl) {
+        if (!cdnUrl) return cdnUrl;
+        
+        try {
+            const url = new URL(cdnUrl, window.location.origin);
+            // If URL is from different origin (CDN), use proxy
+            if (url.origin !== window.location.origin) {
+                const proxyUrl = '/api/Portal/proxy/file?url=' + encodeURIComponent(cdnUrl);
+                return proxyUrl;
+            }
+            // If same origin, use as is
+            return cdnUrl;
+        } catch (e) {
+            // If URL parsing fails, assume it's relative and use as is
+            return cdnUrl;
+        }
+    }
+    
+    // Initialize 3D FlipBook
+    function initializeFlipBook(pdfPath) {
+        
+        // Convert CDN URL to proxy URL to avoid CORS
+        const proxyPdfPath = getProxyUrl(pdfPath);
+        
+        // Validate PDF path
+        if (!pdfPath || pdfPath.trim() === '') {
+            const container = document.querySelector('.sample-container');
+            if (container) {
+                container.innerHTML = `<div class="alert alert-warning">${t('invalidPdfPath')}</div>`;
+            }
+            return;
+        }
+        
+        // Prevent infinite loop
+        if (flipbookInitAttempts >= MAX_INIT_ATTEMPTS) {
+            const container = document.querySelector('.sample-container');
+            if (container) {
+                container.innerHTML = `<div class="alert alert-danger">${t('cannotLoadFlipbook')}</div>`;
+            }
+            return;
+        }
+        
+        flipbookInitAttempts++;
+        
+        // Check scripts status
+        const scriptsStatus = {
+            jQuery: typeof jQuery !== 'undefined',
+            THREE: typeof THREE !== 'undefined',
+            pdfjsLib: typeof pdfjsLib !== 'undefined',
+            FlipBook: (typeof jQuery !== 'undefined' && typeof jQuery.fn.FlipBook !== 'undefined')
+        };
+        
+        
+        // Wait for jQuery and all required scripts to load
+        if (!scriptsStatus.jQuery) {
+            setTimeout(() => initializeFlipBook(pdfPath), 500);
+            return;
+        }
+        
+        // Check if all required scripts are loaded
+        if (!scriptsStatus.THREE) {
+            setTimeout(() => initializeFlipBook(pdfPath), 500);
+            return;
+        }
+        
+        if (!scriptsStatus.pdfjsLib) {
+            setTimeout(() => initializeFlipBook(pdfPath), 500);
+            return;
+        }
+        
+        if (!scriptsStatus.FlipBook) {
+            setTimeout(() => initializeFlipBook(pdfPath), 500);
+            return;
+        }
+        
+        const container = document.querySelector('.sample-container');
+        if (!container) {
+            setTimeout(() => initializeFlipBook(pdfPath), 500);
+            return;
+        }
+        
+        
+        // Clear container completely before initialization
+        // This ensures no duplicate canvas elements remain
+        container.innerHTML = '';
+        
+        // Show loading indicator
+        const loadingText = t('loadingBook');
+        container.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">${loadingText}</span></div><p class="mt-3 text-muted">${loadingText}</p></div>`;
+        
+        try {
+            // Ensure PDF.js worker is configured
+            if (typeof pdfjsLib !== 'undefined') {
+                const workerSrc = window.PDFJS_LOCALE?.pdfJsWorker || '/book/js/pdf.worker.js';
+                pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+            }
+            
+            
+            // Test PDF accessibility (non-blocking) - use proxy URL
+            fetch(proxyPdfPath, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                    } else {
+                    }
+                })
+                .catch(error => {
+                });
+            
+            // Set base path to book folder
+            const basePath = '/book/';
+            
+            // Inject template directly into container before initializing flipbook
+            // Use the inline template defined earlier
+            // Template will be loaded from file: /book/templates/default-book-view.html
+            
+            // Try multiple ways to set basePath to ensure library uses correct path
+            if (typeof jQuery.fn.FlipBook !== 'undefined') {
+                // Method 1: Set defaults if available (global default for all flipbooks)
+                if (jQuery.fn.FlipBook.defaults) {
+                    jQuery.fn.FlipBook.defaults.basePath = basePath;
+                }
+                
+                // Method 2: Set on prototype if available
+                if (jQuery.fn.FlipBook.prototype && jQuery.fn.FlipBook.prototype.constructor) {
+                    const constructor = jQuery.fn.FlipBook.prototype.constructor;
+                    if (constructor.defaults) {
+                        constructor.defaults.basePath = basePath;
+                    }
+                }
+                
+                // Method 3: Override any internal path resolution
+                if (jQuery.fn.FlipBook.prototype && typeof jQuery.fn.FlipBook.prototype._getResourcePath === 'function') {
+                    const originalGetResourcePath = jQuery.fn.FlipBook.prototype._getResourcePath;
+                    jQuery.fn.FlipBook.prototype._getResourcePath = function(path) {
+                        // Use basePath for resource paths
+                        const newPath = path.startsWith('/') ? path : basePath + path;
+                        return originalGetResourcePath.call(this, newPath);
+                    };
+                }
+            }
+            
+            const flipbookOptions = {
+                pdf: proxyPdfPath,  // Use proxy URL instead of direct CDN URL
+                autoFlip: false,
+                autoFlipDuration: 3000,
+                sound: true,  // Enable sound
+                webgl: true,
+                basePath: basePath,  // Set in options - this should override library's default /book/ path
+                // Template configuration - library will load from default-book-view.html
+                template: {
+                    html: 'templates/default-book-view.html',
+                    styles: ['css/style.css'],
+                    script: 'js/default-book-view.js',
+                    sounds: {
+                        startFlip: 'media/start-flip.mp3',
+                        endFlip: 'media/end-flip.mp3'
+                    }
+                },
+                // Disable dragging/moving, only allow page flipping
+                disablePanning: true,
+                disableZoom: true,    
+                showControls: false,
+                showPageInfo: false
+            };
+            
+            
+            // Initialize FlipBook
+            const flipbookInstance = jQuery('.sample-container').FlipBook(flipbookOptions);
+            
+        } catch (error) {
+            
+            container.innerHTML = '<div class="alert alert-warning">' +
+                '<strong>KhÃ´ng thá»ƒ táº£i PDF</strong><br>' +
+                'Lá»—i: ' + (error.message || 'Unknown error') + '<br>' +
+                'PDF Path: <a href="' + pdfPath + '" target="_blank" rel="noopener">' + pdfPath + '</a><br>' +
+                '<small>Vui lÃ²ng kiá»ƒm tra console (F12) Ä‘á»ƒ biáº¿t thÃªm chi tiáº¿t.</small>' +
+                '</div>';
+        }
+    }
+    
+    // Update book content based on selected language
+    function updateBookLanguage(langCode) {
+        // Check both PascalCase and camelCase for Translations
+        const translations = bookData?.Translations || bookData?.translations || [];
+        if (!bookData || !translations || translations.length === 0) return;
+        
+        // Find translation matching current language
+        let translation = null;
+        
+        // First try exact match (check both PascalCase and camelCase)
+        translation = translations.find(t => {
+            const lang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+            return lang === langCode.toLowerCase();
+        });
+        
+        // If no exact match, try language code prefix
+        if (!translation) {
+            translation = translations.find(t => {
+                const tLang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+                const currentLang = langCode.toLowerCase();
+                return tLang === currentLang || 
+                       tLang.substring(0, 2) === currentLang.substring(0, 2);
+            });
+        }
+        
+        // Fallback to first translation
+        if (!translation && translations.length > 0) {
+            translation = translations[0];
+        }
+        
+        if (!translation) return;
+        
+        // Get translation properties (check both PascalCase and camelCase)
+        const title = translation.Title || translation.title || 'SÃ¡ch';
+        const summary = translation.Summary || translation.summary || '';
+        const content = translation.Content || translation.content || translation.Description || translation.description || '';
+        
+        // Update page title
+        if (document.title) {
+            document.title = title + ' - ' + (document.title.split(' - ')[1] || '');
+        }
+        
+        // Update book title
+        const titleEl = document.getElementById('bookTitle');
+        if (titleEl) {
+            titleEl.textContent = title;
+        }
+        
+        // Update book summary
+        const summaryEl = document.getElementById('bookSummary');
+        if (summaryEl) {
+            if (summary) {
+                summaryEl.innerHTML = summary;
+                summaryEl.style.display = '';
+            } else {
+                summaryEl.style.display = 'none';
+            }
+        }
+        
+        // Update book content
+        const contentEl = document.getElementById('bookContent');
+        if (contentEl) {
+            if (content) {
+                contentEl.innerHTML = content;
+            } else {
+                const updatingText = t('contentUpdating');
+                contentEl.innerHTML = `<p class="text-muted">${updatingText}</p>`;
+            }
+        }
+        
+        // Update content updating text if exists
+        const updatingTextEl = document.getElementById('contentUpdatingText');
+        if (updatingTextEl) {
+            updatingTextEl.textContent = t('contentUpdating');
+        }
+        
+        // Update book thumbnail alt
+        const thumbnailEl = document.querySelector('.book-thumbnail img');
+        if (thumbnailEl) {
+            thumbnailEl.alt = title;
+        }
+        
+        // Update related books title
+        updateRelatedBooksTitle();
+        
+        // Reload related books with new language
+        loadRelatedBooks();
+    }
+    
+    async function loadRelatedBooks() {
+        const relatedBooksSection = document.getElementById('relatedBooksSection');
+        const relatedBooksContainer = document.getElementById('relatedBooksContainer');
+        
+        if (!relatedBooksSection || !relatedBooksContainer) return;
+        
+        // Use existing bookData from global scope (already loaded from server)
+        // bookData is already defined at the top of the script with full book information
+        
+        // Get CategoryIds from bookData (check both PascalCase and camelCase)
+        const categoryIds = bookData?.CategoryIds || bookData?.categoryIds || [];
+        const currentBookId = String(bookData?.Id || bookData?.id || '');
+        
+        if (!categoryIds || categoryIds.length === 0) {
+            return; // No categories, no related books
+        }
+        
+        // Get current language
+        let langCode = localStorage.getItem('selectedLanguage') || '@currentLang' || 'vi';
+        
+        try {
+            // Load books from categories sequentially until we have 12 items
+            const allBooks = [];
+            const seenBookIds = new Set();
+            const MAX_BOOKS = 12;
+            
+            // Load books from each category sequentially (no langCode - get all translations)
+            for (const categoryId of categoryIds) {
+                // Stop if we already have enough books
+                if (allBooks.length >= MAX_BOOKS) {
+                    break;
+                }
+                
+                try {
+                    // Calculate how many more books we need
+                    const remaining = MAX_BOOKS - allBooks.length;
+                    const pageSize = Math.min(remaining + 5, 12); // Load a bit more to account for filtering
+                    
+                    const response = await fetch(`/api/Portal/books?categoryId=${encodeURIComponent(categoryId)}&pageNumber=1&pageSize=${pageSize}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.items && Array.isArray(data.items)) {
+                            // Process items from this category
+                            for (const item of data.items) {
+                                // Stop if we have enough books
+                                if (allBooks.length >= MAX_BOOKS) {
+                                    break;
+                                }
+                                
+                                // Convert item ID to string for comparison
+                                const itemId = String(item.id || '');
+                                
+                                // Skip current book and duplicates, only published books
+                                if (itemId !== currentBookId && 
+                                    !seenBookIds.has(itemId) && 
+                                    item.published) {
+                                    seenBookIds.add(itemId);
+                                    allBooks.push(item);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    // Error loading books from category, continue to next category
+                    continue;
+                }
+            }
+            
+            // Sort by DateAdd (newest first) and take exactly 12
+            const sortedBooks = allBooks
+                .sort((a, b) => {
+                    const dateA = a.dateAdd ? new Date(a.dateAdd) : new Date(0);
+                    const dateB = b.dateAdd ? new Date(b.dateAdd) : new Date(0);
+                    return dateB - dateA;
+                })
+                .slice(0, MAX_BOOKS);
+            
+            if (sortedBooks.length === 0) {
+                return;
+            }
+            
+            // Render related books
+            renderRelatedBooks(sortedBooks, langCode, '@pageSlug');
+            
+            // Show section
+            relatedBooksSection.style.display = 'block';
+        } catch (error) {
+            // Error loading related books
+        }
+    }
+    
+    // View state for related books
+    let relatedBooksView = 'grid';
+    
+    // Set view for related books
+    function setRelatedBooksView(view) {
+        relatedBooksView = view;
+        const relatedBooksContainer = document.getElementById('relatedBooksContainer');
+        if (relatedBooksContainer) {
+            relatedBooksContainer.setAttribute('data-view', view);
+        }
+        
+        // Update toggle buttons
+        const toggleButtons = document.querySelectorAll('.view-toggle-books button');
+        toggleButtons.forEach(btn => {
+            if (btn.getAttribute('data-view') === view) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+    
+    // Initialize view toggle buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButtons = document.querySelectorAll('.view-toggle-books button');
+        toggleButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const view = this.getAttribute('data-view');
+                setRelatedBooksView(view);
+            });
+        });
+    });
+    
+    function renderRelatedBooks(books, langCode, pageSlug) {
+        const relatedBooksContainer = document.getElementById('relatedBooksContainer');
+        if (!relatedBooksContainer) return;
+        
+        relatedBooksContainer.innerHTML = '';
+        relatedBooksContainer.setAttribute('data-view', relatedBooksView);
+        
+        books.forEach(book => {
+            // Find translation matching current language
+            let translation = null;
+            if (book.translations && Array.isArray(book.translations)) {
+                translation = book.translations.find(t => 
+                    (t.languageCode || '').toLowerCase() === langCode.toLowerCase()
+                );
+                
+                if (!translation) {
+                    translation = book.translations.find(t => {
+                        const tLang = (t.languageCode || '').toLowerCase();
+                        const currentLang = langCode.toLowerCase();
+                        return tLang === currentLang || 
+                               tLang.substring(0, 2) === currentLang.substring(0, 2);
+                    });
+                }
+                
+                if (!translation && book.translations.length > 0) {
+                    translation = book.translations[0];
+                }
+            }
+            
+            if (!translation) return;
+            
+            const bookId = book.id || '';
+            const urlSlug = translation.urlSlug || '';
+            const title = translation.title || '';
+            const summary = translation.summary || translation.description || '';
+            const thumbnail = book.thumbnail || '';
+            const author = book.author || '';
+            
+            // Generate link - always use direct route format: /book/{slug}
+            const defaultSlug = urlSlug || 'book'; // Use 'book' as default if no urlSlug
+            const link = `/book/${defaultSlug}`;
+            
+            // Strip HTML tags from summary for display (only show plain text)
+            let summaryText = '';
+            if (summary) {
+                // Remove HTML tags and get plain text
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = summary;
+                summaryText = tempDiv.textContent || tempDiv.innerText || '';
+            }
+            
+            // Create book item
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'related-post-item';
+            
+            itemDiv.innerHTML = `
+                ${thumbnail ? `<div class="related-post-media"><img src="${escapeHtml(thumbnail)}" alt="${escapeHtml(title)}" class="related-post-image" onerror="this.parentElement.style.display='none'"></div>` : ''}
+                <div class="related-post-body">
+                    <h4 class="related-post-title">
+                        <a href="${link}">${escapeHtml(title)}</a>
+                    </h4>
+                    ${summaryText ? `<p class="related-post-summary">${escapeHtml(summaryText.substring(0, 150))}${summaryText.length > 150 ? '...' : ''}</p>` : ''}
+                    <div class="related-post-meta${author ? ' has-author' : ''}">
+                        ${author ? `<span class="related-post-author"><i class="bi bi-person"></i> ${escapeHtml(author)}</span>` : ''}
+                        <a href="${link}" class="heritage-btn-continue">${escapeHtml(t('viewContinue') || t('viewDetails'))}</a>
+                    </div>
+                </div>
+            `;
+            
+            relatedBooksContainer.appendChild(itemDiv);
+        });
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+
+@* jQuery is already loaded in _Layout.cshtml *@
+@section Scripts {
+    @* Setup AJAX intercept BEFORE loading 3dflipbook library *@
+    <script type="text/javascript">
+        (function setupAjaxIntercept() {
+        })();
+    </script>
+    
+    <script src="~/book/js/three.min.js"></script>
+    <script src="~/book/js/pdf.min.js"></script>
+    
+    <script type="text/javascript">
+        // Configure PDF.js worker before loading 3dflipbook
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '@Url.Content("~/book/js/pdf.worker.js")';
+        }
+        
+        // Store PDF.js configuration for later use
+        window.PDFJS_LOCALE = {
+            pdfJsWorker: '@Url.Content("~/book/js/pdf.worker.js")',
+            pdfJsCMapUrl: '@Url.Content("~/book/cmaps")'
+        };
+    </script>
+    
+    <script src="~/book/js/3dflipbook.min.js"></script>
+    
+    <script type="text/javascript">
+        // Ensure PDF.js worker is configured after all scripts load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof pdfjsLib !== 'undefined') {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = window.PDFJS_LOCALE.pdfJsWorker || '/book/js/pdf.worker.js';
+            }
+        });
+    </script>
+}
+

@@ -1,0 +1,23 @@
+@model GalleryAlbumSectionViewModel
+@{
+    var sectionId = Model?.SectionId ?? "galleryVideosSection";
+    var gridId = Model?.GridId ?? "galleryVideoAlbums";
+    var paginationId = Model?.PaginationId ?? "galleryVideoPagination";
+    var sectionLabel = Model?.SectionLabel ?? "THƯ VIỆN VIDEO";
+    var paginationLabel = Model?.PaginationAriaLabel ?? "Phân trang album video";
+    var mediaType = Model?.MediaType ?? "video";
+    var sectionClass = Model?.IsRelated == true ? "content-section gallery-related-section" : "content-section";
+}
+
+<div class="@sectionClass" id="@sectionId" data-media-type="@mediaType">
+    <div class="gallery-section__head">
+        <div>
+            <p class="heritage-section-label">@sectionLabel</p>
+            <div class="heritage-gold-bar"></div>
+        </div>
+    </div>
+    <div class="gallery-album-grid" id="@gridId">
+        <div class="gallery-loading"><div class="spinner-border spinner-border-sm text-warning" role="status"></div></div>
+    </div>
+    <div class="gallery-album-pagination d-none" id="@paginationId" aria-label="@paginationLabel"></div>
+</div>

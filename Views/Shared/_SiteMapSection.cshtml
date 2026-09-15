@@ -1,0 +1,38 @@
+@{
+    var mapSectionId = ViewData["MapSectionId"] as string ?? "site-map-section";
+    var mapExtraClass = ViewData["MapSectionExtraClass"] as string ?? "";
+    var includeContactSidebar = ViewData["IncludeContactSidebar"] as bool? ?? false;
+}
+
+<section class="contact-map-section site-map-section @mapExtraClass" id="@mapSectionId" data-site-map-section>
+    <div class="heritage-section-inner">
+        <p class="contact-section-label" data-i18n="contactMapLabel">Vị trí</p>
+        <div class="contact-map-layout@(includeContactSidebar ? " contact-map-layout--split" : "")">
+            <div class="contact-map-frame">
+                <iframe
+                    class="site-map-iframe"
+                    title="Bản đồ"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    src=""></iframe>
+                <a href="#" class="contact-map-btn site-map-external-link" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span data-i18n="contactOpenMaps">Mở Google Maps</span>
+                </a>
+            </div>
+            @if (includeContactSidebar)
+            {
+                <aside class="contact-map-sidebar">
+                    @await Html.PartialAsync("_ContactInfoBox")
+                    @await Html.PartialAsync("_ContactActionsBox")
+                </aside>
+            }
+        </div>
+    </div>
+</section>
+
+<script src="~/js/site-map.js" asp-append-version="true"></script>
+@if (includeContactSidebar)
+{
+    <script src="~/js/contact-sidebar.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "Chi tiết nội dung";
+    var id = ViewContext.RouteData.Values["id"]?.ToString() ?? "1";
+}
+
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-8">
+            <article class="content-detail">
+                <h1 class="mb-3">Tiêu đề nội dung chi tiết #@id</h1>
+                
+                <div class="content-meta mb-4">
+                    <span class="text-muted">
+                        <i class="bi bi-calendar"></i> Ngày đăng: @DateTime.Now.AddDays(-int.Parse(id)).ToString("dd/MM/yyyy HH:mm")
+                    </span>
+                    <span class="text-muted ms-3">
+                        <i class="bi bi-person"></i> Tác giả: Admin
+                    </span>
+                    <span class="text-muted ms-3">
+                        <i class="bi bi-eye"></i> Lượt xem: @(100 + int.Parse(id) * 10)
+                    </span>
+                </div>
+
+                <div class="content-image mb-4">
+                    <img src="https://via.placeholder.com/800x400/007bff/ffffff?text=Hinh+Anh+@id" class="img-fluid" alt="Hình ảnh nội dung">
+                </div>
+
+                <div class="content-body">
+                    <p>
+                        Đây là nội dung chi tiết của bài viết số @id. Bạn có thể thay đổi nội dung này để hiển thị 
+                        thông tin chi tiết của các bài viết, sản phẩm, hoặc bất kỳ loại nội dung nào.
+                    </p>
+                    
+                    <p>
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut 
+                        labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco 
+                        laboris nisi ut aliquip ex ea commodo consequat.
+                    </p>
+
+                    <h3>Phần 1: Giới thiệu</h3>
+                    <p>
+                        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla 
+                        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt 
+                        mollit anim id est laborum.
+                    </p>
+
+                    <h3>Phần 2: Nội dung chính</h3>
+                    <p>
+                        Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, 
+                        totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae 
+                        dicta sunt explicabo.
+                    </p>
+
+                    <h3>Phần 3: Kết luận</h3>
+                    <p>
+                        Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur 
+                        magni dolores eos qui ratione voluptatem sequi nesciunt.
+                    </p>
+                </div>
+
+                <div class="content-tags mt-4">
+                    <strong>Tags:</strong>
+                    <a href="#" class="badge bg-secondary">Tag 1</a>
+                    <a href="#" class="badge bg-secondary">Tag 2</a>
+                    <a href="#" class="badge bg-secondary">Tag 3</a>
+                </div>
+            </article>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5>Bài viết liên quan</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <a href="@Url.Action("Index", "Content", new { id = (int.Parse(id) + 1) })">
+                                    Bài viết liên quan 1
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a href="@Url.Action("Index", "Content", new { id = (int.Parse(id) + 2) })">
+                                    Bài viết liên quan 2
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a href="@Url.Action("Index", "Content", new { id = (int.Parse(id) + 3) })">
+                                    Bài viết liên quan 3
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Bài viết mới nhất</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><a href="#">Bài viết mới nhất 1</a></li>
+                            <li class="mb-2"><a href="#">Bài viết mới nhất 2</a></li>
+                            <li class="mb-2"><a href="#">Bài viết mới nhất 3</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

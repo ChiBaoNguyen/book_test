@@ -1,0 +1,397 @@
+@{
+    var pageTitle = ViewData["Title"] as string ?? "";
+    var isHomePage = pageTitle == "Trang chủ" || Context.Request.Path.Value == "/" || Context.Request.Path.Value == "/Home/Index";
+}
+
+<div id="mainSlider" class="heritage-hero carousel slide" data-bs-ride="carousel"
+     data-page-title="@pageTitle"
+     data-is-home-page="@isHomePage.ToString().ToLower()">
+    <div id="sliderLoading" class="text-center py-5" style="min-height:400px;display:flex;align-items:center;justify-content:center;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Đang tải slider...</span>
+        </div>
+    </div>
+
+    <div class="heritage-hero-overlay" id="heritageHeroOverlay" style="display:none;"></div>
+    <div class="heritage-hero-content" id="heritageHeroContent" style="display:none;">
+        <div>
+            
+            <h1 class="heritage-hero-title" id="heritageHeroTitle">Khám Phá &amp; Trải Nghiệm</h1>
+            <p class="heritage-hero-subtitle" id="heritageHeroSubtitle">Nhanh chóng — Tiện lợi — Đậm chất văn hóa</p>
+            <p class="heritage-hero-desc" id="heritageHeroDesc">Tìm hiểu di tích, danh thắng và dịch vụ du lịch tại một nơi.</p>
+            <div class="heritage-hero-buttons d-none" id="heritageHeroButtons" aria-label="Hành động slider"></div>
+        </div>
+    </div>
+
+    <div id="sliderContent" style="display: none;">
+        <div class="carousel-indicators" id="sliderIndicators"></div>
+        <div class="carousel-inner" id="sliderInner"></div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#mainSlider" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#mainSlider" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    <div id="sliderFallback" class="heritage-page-banner d-none">
+        <h1 id="sliderFallbackTitle"></h1>
+    </div>
+
+    <div id="sliderEmpty" class="d-none"></div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Wait a bit for menu to load first
+        setTimeout(() => {
+            loadSliders();
+        }, 500);
+        
+        // Listen for language change events
+        window.addEventListener('languageChanged', function(event) {
+            setTimeout(() => {
+                loadSliders();
+            }, 300);
+        });
+        
+        // Listen for menu loaded event (if available)
+        window.addEventListener('menuLoaded', function() {
+            loadSliders();
+        });
+    });
+
+    // Function to get current menu title
+    function getCurrentMenuTitle() {
+        try {
+            // Try to get from localStorage (set by menu)
+            const currentMenuMatch = localStorage.getItem('currentMenuMatch');
+            if (currentMenuMatch) {
+                const menu = JSON.parse(currentMenuMatch);
+                if (menu && menu.translations && menu.translations.length > 0) {
+                    // Get current language
+                    const langCode = localStorage.getItem('selectedLanguage') || 'vi';
+                    
+                    // Try to find translation matching current language
+                    let translation = menu.translations.find(t => 
+                        t.languageCode?.toLowerCase() === langCode.toLowerCase()
+                    );
+                    
+                    // If not found, try 2-char prefix match
+                    if (!translation) {
+                        translation = menu.translations.find(t => 
+                            t.languageCode?.toLowerCase().substring(0, 2) === langCode.toLowerCase().substring(0, 2)
+                        );
+                    }
+                    
+                    // Fallback to first translation
+                    if (!translation) {
+                        translation = menu.translations[0];
+                    }
+                    
+                    if (translation && translation.title) {
+                        return translation.title;
+                    }
+                }
+            }
+        } catch (e) {
+            // Error getting menu title
+        }
+        
+        // Fallback: try to get from active nav link
+        const activeNavLink = document.querySelector('.nav-link.active');
+        if (activeNavLink) {
+            return activeNavLink.textContent.trim();
+        }
+        
+        // Final fallback: use page title from data attribute
+        const sliderElement = document.getElementById('mainSlider');
+        return sliderElement?.getAttribute('data-page-title') || document.title.split(' - ')[0] || '';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function pickSliderTranslation(slider, langCode) {
+        if (!slider?.translations || !Array.isArray(slider.translations)) return null;
+        let translation = slider.translations.find(t => {
+            const tLangCode = (t.languageCode || '').toString().toLowerCase().trim();
+            const currentLang = langCode.toLowerCase().trim();
+            return tLangCode === currentLang;
+        });
+        if (!translation) {
+            translation = slider.translations.find(t => {
+                const tLangCode = (t.languageCode || '').toString().toLowerCase().trim();
+                const currentLang = langCode.toLowerCase().trim();
+                return tLangCode.substring(0, 2) === currentLang.substring(0, 2);
+            });
+        }
+        return translation || slider.translations[0] || null;
+    }
+
+    function extractSliderButtons(translation) {
+        if (!translation) return [];
+        const buttons = [];
+        for (let i = 1; i <= 5; i++) {
+            const title = translation[`button${i}Title`] || translation[`Button${i}Title`]
+                || translation[`button${i}Text`] || translation[`Button${i}Text`] || '';
+            const link = translation[`button${i}Link`] || translation[`Button${i}Link`]
+                || translation[`button${i}Url`] || translation[`Button${i}Url`] || '';
+            if (title && String(title).trim()) {
+                buttons.push({
+                    title: String(title).trim(),
+                    link: String(link).trim() || '#'
+                });
+            }
+        }
+        return buttons;
+    }
+
+    function renderHeroButtons(buttons) {
+        const container = document.getElementById('heritageHeroButtons');
+        if (!container) return;
+
+        if (!buttons || !buttons.length) {
+            container.innerHTML = '';
+            container.classList.add('d-none');
+            return;
+        }
+
+        container.classList.remove('d-none');
+        container.innerHTML = buttons.map((button, index) => {
+            const isPrimary = index === 0;
+            const cls = isPrimary
+                ? 'heritage-hero-btn heritage-hero-btn--primary'
+                : 'heritage-hero-btn heritage-hero-btn--outline';
+            const href = button.link || '#';
+            const external = /^https?:\/\//i.test(href);
+            const target = external ? ' target="_blank" rel="noopener noreferrer"' : '';
+            return `<a href="${escapeHtml(href)}" class="${cls}"${target}>${escapeHtml(button.title)}</a>`;
+        }).join('');
+    }
+
+    function updateHeroFromSlide(slider, langCode) {
+        const translation = pickSliderTranslation(slider, langCode);
+        const hTitle = document.getElementById('heritageHeroTitle');
+        const hSub = document.getElementById('heritageHeroSubtitle');
+        const hDesc = document.getElementById('heritageHeroDesc');
+
+        if (hTitle) hTitle.textContent = translation?.title || translation?.name || hTitle.textContent;
+        if (hSub) hSub.textContent = translation?.summary || '';
+        if (hDesc) hDesc.textContent = translation?.description || '';
+
+        renderHeroButtons(extractSliderButtons(translation));
+    }
+
+    async function loadSliders() {
+        const loadingIndicator = document.getElementById('sliderLoading');
+        const sliderContent = document.getElementById('sliderContent');
+        const sliderEmpty = document.getElementById('sliderEmpty');
+        const sliderFallback = document.getElementById('sliderFallback');
+        const sliderIndicators = document.getElementById('sliderIndicators');
+        const sliderInner = document.getElementById('sliderInner');
+
+        // Get current language from localStorage
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+        
+        // Get menu title and check if it's home page
+        const menuTitle = getCurrentMenuTitle();
+        const isHomePage = window.location.pathname === '/' || 
+                          window.location.pathname === '/Home/Index' ||
+                          window.location.pathname.toLowerCase() === '/home';
+
+        try {
+            // Fetch all active sliders (API doesn't accept langCode parameter)
+            let response = await fetch('/api/Portal/sliders/active');
+            
+            if (!response.ok) {
+                throw new Error('Failed to load sliders');
+            }
+
+            let data = await response.json();
+            
+            // Hide loading indicator
+            loadingIndicator.style.display = 'none';
+
+            let sliderItems = [];
+            
+            // Handle different response structures and filter by name "MainSlider" (case-insensitive)
+            if (Array.isArray(data)) {
+                // If response is an array, filter by name "MainSlider" (lowercase comparison)
+                const mainSlider = data.find(slider => {
+                    const sliderName = (slider.name || slider.sliderName || slider.code || '').toString().toLowerCase().trim();
+                    return sliderName === 'mainslider';
+                });
+                
+                if (mainSlider) {
+                    // If slider has items property, use it
+                    if (mainSlider.items && Array.isArray(mainSlider.items)) {
+                        sliderItems = mainSlider.items;
+                    } else if (mainSlider.sliderItems && Array.isArray(mainSlider.sliderItems)) {
+                        sliderItems = mainSlider.sliderItems;
+                    } else {
+                        // If no items property, treat the slider itself as an item
+                        sliderItems = [mainSlider];
+                    }
+                }
+            } else if (data && typeof data === 'object') {
+                // If response is a single object, check if it's MainSlider
+                const sliderName = (data.name || data.sliderName || data.code || '').toString().toLowerCase().trim();
+                if (sliderName === 'mainslider') {
+                    if (data.items && Array.isArray(data.items)) {
+                        sliderItems = data.items;
+                    } else if (data.sliderItems && Array.isArray(data.sliderItems)) {
+                        sliderItems = data.sliderItems;
+                    } else {
+                        sliderItems = [data];
+                    }
+                }
+            }
+
+            // Check if we have slider items
+            if (!sliderItems || sliderItems.length === 0) {
+                // If no slider and not home page, show fallback banner with menu title
+                if (!isHomePage && menuTitle) {
+                    const fallbackTitle = document.querySelector('#sliderFallbackTitle');
+                    if (fallbackTitle) {
+                        fallbackTitle.textContent = menuTitle;
+                    }
+                    sliderFallback.classList.remove('d-none');
+                    sliderContent.style.display = 'none';
+                    const overlay = document.getElementById('heritageHeroOverlay');
+                    const heroContent = document.getElementById('heritageHeroContent');
+                    if (overlay) overlay.style.display = 'none';
+                    if (heroContent) heroContent.style.display = 'none';
+                    renderHeroButtons([]);
+                } else if (isHomePage) {
+                    sliderFallback.classList.add('d-none');
+                    const overlay = document.getElementById('heritageHeroOverlay');
+                    const heroContent = document.getElementById('heritageHeroContent');
+                    if (overlay) overlay.style.display = 'block';
+                    if (heroContent) heroContent.style.display = 'flex';
+                    sliderContent.style.display = 'none';
+                    renderHeroButtons([]);
+                } else {
+                    // Home page: hide everything
+                    sliderContent.style.display = 'none';
+                    sliderFallback.classList.add('d-none');
+                }
+                return;
+            }
+
+            // Hide fallback if we have slider
+            sliderFallback.classList.add('d-none');
+
+            // Clear existing content
+            sliderIndicators.innerHTML = '';
+            sliderInner.innerHTML = '';
+
+            // Generate indicators and slider items
+            sliderItems.forEach((slider, index) => {
+                const translation = pickSliderTranslation(slider, langCode);
+                const title = translation?.title || translation?.name || '';
+                const imageUrl = translation?.image || translation?.imageUrl || translation?.thumbnail ||
+                                slider.image || slider.imageUrl || slider.thumbnail || '';
+                const isActive = index === 0 ? 'active' : '';
+
+                // Create indicator
+                const indicator = document.createElement('button');
+                indicator.type = 'button';
+                indicator.setAttribute('data-bs-target', '#mainSlider');
+                indicator.setAttribute('data-bs-slide-to', index.toString());
+                indicator.setAttribute('aria-label', `Slide ${index + 1}`);
+                if (isActive) {
+                    indicator.classList.add('active');
+                    indicator.setAttribute('aria-current', 'true');
+                }
+                sliderIndicators.appendChild(indicator);
+
+                // Create carousel item
+                const carouselItem = document.createElement('div');
+                carouselItem.className = `carousel-item ${isActive}`;
+                
+                let itemContent = '';
+                
+                // Add image or placeholder
+                if (imageUrl) {
+                    itemContent += `<img src="${imageUrl}" alt="${title}" class="d-block w-100" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
+                }
+                
+                // Add placeholder if no image
+                itemContent += `<div class="slider-placeholder" style="display: ${imageUrl ? 'none' : 'flex'}; width: 100%; height: 100%; align-items: center; justify-content: center; background: linear-gradient(135deg, #00182d 0%, #0a4d8c 100%); color: white; font-size: 24px; font-weight: bold;">
+                    ${title || 'Slider ' + (index + 1)}
+                </div>`;
+
+                carouselItem.innerHTML = itemContent;
+                sliderInner.appendChild(carouselItem);
+            });
+
+            // Show slider content
+            sliderContent.style.display = 'block';
+
+            // Heritage hero overlay
+            const overlay = document.getElementById('heritageHeroOverlay');
+            const heroContent = document.getElementById('heritageHeroContent');
+            if (overlay) overlay.style.display = 'block';
+            if (heroContent) heroContent.style.display = 'flex';
+
+            updateHeroFromSlide(sliderItems[0], langCode);
+
+            const carouselEl = document.getElementById('mainSlider');
+            if (carouselEl) {
+                if (carouselEl._heritageSlidHandler) {
+                    carouselEl.removeEventListener('slid.bs.carousel', carouselEl._heritageSlidHandler);
+                }
+                carouselEl._heritageSlidHandler = function (e) {
+                    const item = sliderItems[e.to];
+                    if (item) updateHeroFromSlide(item, langCode);
+                };
+                carouselEl.addEventListener('slid.bs.carousel', carouselEl._heritageSlidHandler);
+            }
+
+            // Initialize Bootstrap carousel after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                const carouselElement = document.getElementById('mainSlider');
+                if (carouselElement && typeof bootstrap !== 'undefined') {
+                    // Dispose existing carousel if any
+                    const existingCarousel = bootstrap.Carousel.getInstance(carouselElement);
+                    if (existingCarousel) {
+                        existingCarousel.dispose();
+                    }
+                    
+                    // Initialize new carousel
+                    const carousel = new bootstrap.Carousel(carouselElement, {
+                        interval: 5000, // Auto-rotate every 5 seconds
+                        wrap: true,
+                        ride: 'carousel'
+                    });
+                }
+            }, 100);
+
+        } catch (error) {
+            loadingIndicator.style.display = 'none';
+            
+            // On error, show fallback if not home page
+            if (!isHomePage && menuTitle) {
+                const fallbackTitle = document.querySelector('#sliderFallbackTitle');
+                if (fallbackTitle) {
+                    fallbackTitle.textContent = menuTitle;
+                }
+                sliderFallback.classList.remove('d-none');
+                sliderContent.style.display = 'none';
+            } else {
+                sliderContent.style.display = 'none';
+                sliderFallback.classList.add('d-none');
+            }
+        }
+    }
+</script>
+

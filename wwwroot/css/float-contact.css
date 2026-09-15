@@ -1,0 +1,89 @@
+/* Floating contact — bottom-right, site-wide */
+.heritage-float-contact {
+  position: fixed;
+  right: 16px;
+  bottom: 20px;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.heritage-float-contact__btn {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0, 24, 45, 0.22);
+  color: #fff !important;
+  text-decoration: none !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.heritage-float-contact__btn:hover,
+.heritage-float-contact__btn:focus-visible {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 8px 24px rgba(0, 24, 45, 0.28);
+  color: #fff !important;
+}
+
+.heritage-float-contact__btn--zalo {
+  background: #0068ff;
+}
+
+.heritage-float-contact__btn--phone {
+  background: #25d366;
+  animation: heritage-float-phone-pulse 2.4s ease-in-out infinite;
+}
+
+.heritage-float-contact__btn--email {
+  background: var(--heritage-navy);
+}
+
+.heritage-float-contact__btn i {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.heritage-float-contact__icon {
+  width: 26px;
+  height: 26px;
+}
+
+@keyframes heritage-float-phone-pulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 16px rgba(0, 24, 45, 0.22);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(37, 211, 102, 0.45), 0 0 0 8px rgba(37, 211, 102, 0.12);
+  }
+}
+
+@media (min-width: 768px) {
+  .heritage-float-contact {
+    right: 24px;
+    bottom: 28px;
+    gap: 12px;
+  }
+
+  .heritage-float-contact__btn {
+    width: 56px;
+    height: 56px;
+  }
+
+  .heritage-float-contact__btn i {
+    font-size: 24px;
+  }
+
+  .heritage-float-contact__icon {
+    width: 28px;
+    height: 28px;
+  }
+}

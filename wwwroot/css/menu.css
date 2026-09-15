@@ -1,0 +1,58 @@
+/* Heritage header — desktop primary menu */
+.heritage-header.scrolled {
+  background: rgba(0, 18, 35, 0.98);
+}
+
+/* Override Bootstrap .navbar-nav { flex-direction: column } if class leaks in */
+.heritage-nav-desktop .heritage-menu-list,
+.heritage-nav-desktop #menuItems {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.heritage-nav-desktop .nav-item {
+  position: relative;
+  list-style: none;
+}
+
+.heritage-nav-desktop .nav-item.dropdown {
+  position: relative;
+}
+
+.heritage-nav-desktop .dropdown:hover > .dropdown-menu {
+  display: block;
+}
+
+.heritage-nav-desktop .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1100;
+  min-width: 200px;
+  display: none;
+  flex-direction: column;
+  padding: 8px 0;
+  margin: 0;
+  list-style: none;
+}
+
+.heritage-nav-desktop .dropdown-menu .nav-item {
+  display: block;
+  width: 100%;
+}
+
+.heritage-nav-desktop .dropdown-menu .nav-link {
+  display: block;
+  width: 100%;
+  padding: 8px 20px !important;
+  white-space: nowrap;
+}
+
+.heritage-nav-desktop .dropdown-menu .nav-link::before {
+  display: none !important;
+}

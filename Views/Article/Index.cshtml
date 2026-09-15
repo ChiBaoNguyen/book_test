@@ -1,0 +1,506 @@
+@{
+    var article = ViewBag.Article as CreativeWeb.Controllers.ArticleDto;
+    var pageSlug = ViewBag.PageSlug as string ?? "";
+    // Get language from query string or cookie
+    var currentLang = Context.Request.Query["lang"].ToString();
+    if (string.IsNullOrWhiteSpace(currentLang))
+    {
+        currentLang = Context.Request.Cookies["selectedLanguage"] ?? "vi"; // Default language
+    }
+    
+    var translation = article?.Translations?.FirstOrDefault(t => t.LanguageCode == currentLang)
+        ?? article?.Translations?.FirstOrDefault();
+    
+    ViewData["Title"] = translation?.Title ?? "Bài viết";
+    var articleTitle = translation?.Title ?? "Bài viết";
+    var articleSummary = translation?.Summary ?? "";
+    // Try Content first, then Description as fallback
+    var articleContent = translation?.Content ?? translation?.Description ?? "";
+    var articleImage = article?.Image ?? "";
+}
+
+<div class="heritage-detail-wrap">
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="article-content">
+                @if (!string.IsNullOrWhiteSpace(articleTitle))
+                {
+                    <h1 class="article-title" id="articleTitle">@articleTitle</h1>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(articleSummary))
+                {
+                    <div class="article-lead" id="articleSummary">
+                        @Html.Raw(articleSummary)
+                    </div>
+                }
+                else
+                {
+                    <div class="article-lead" id="articleSummary" style="display:none;"></div>
+                }
+
+                <figure class="article-figure" id="articleFigure" style="@(string.IsNullOrWhiteSpace(articleImage) ? "display:none;" : "")">
+                    <img src="@articleImage" alt="@articleTitle" id="articleImage" loading="lazy" />
+                    <figcaption class="article-figure__caption" id="articleImageCaption" style="display:none;"></figcaption>
+                </figure>
+                
+                @if (!string.IsNullOrWhiteSpace(articleContent))
+                {
+                    <div class="content-body article-body" id="articleContent">
+                        @Html.Raw(articleContent)
+                    </div>
+                }
+                else
+                {
+                    <div class="content-body article-body" id="articleContent">
+                        <p class="text-muted" id="contentUpdatingText">Nội dung đang được cập nhật...</p>
+                    </div>
+                }
+            </div>
+            
+            <!-- Related Posts Section -->
+            <div class="related-posts mt-5" id="relatedPostsSection" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0" id="relatedPostsTitle">Bài viết liên quan</h3>
+                    <div class="view-toggle view-toggle-articles">
+                        <button class="btn btn-xs btn-outline-secondary active" data-view="grid" id="gridViewBtn" title="">
+                            <i class="bi bi-grid" style="font-size: 0.875rem;"></i>
+                        </button>
+                        <button class="btn btn-xs btn-outline-secondary" data-view="list" id="listViewBtn" title="">
+                            <i class="bi bi-list" style="font-size: 0.875rem;"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="relatedPostsContainer" class="related-posts-container" data-view="grid">
+                    <!-- Related posts will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<script>
+    // Store article data with all translations
+    const articleData = @Html.Raw(Json.Serialize(new {
+        Id = article?.Id,
+        Image = article?.Image,
+        CategoryIds = article?.CategoryIds ?? new List<string>(),
+        Translations = article?.Translations
+    }));
+    
+    // Language translations
+    let articleTranslations = {};
+    let articleDefaultLang = 'vi';
+    
+    // Load translations
+    async function loadArticleTranslations() {
+        try {
+            const response = await fetch('/locales/page.json');
+            if (response.ok) {
+                const data = await response.json();
+                articleDefaultLang = data.default || 'vi';
+                articleTranslations = data;
+            }
+        } catch (error) {
+            // Error loading article translations
+        }
+    }
+    
+    // Get translation by key
+    function t(key) {
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+        // Kiểm tra xem có key ngôn ngữ nào trong file JSON trùng với langCode không
+        if (langCode && articleTranslations[langCode]) {
+            return articleTranslations[langCode][key] || articleTranslations[articleDefaultLang]?.[key] || key;
+        }
+        return articleTranslations[articleDefaultLang]?.[key] || key;
+    }
+    
+    // Update related posts title
+    function updateRelatedPostsTitle() {
+        // Ensure translations are loaded
+        if (Object.keys(articleTranslations).length === 0) {
+            // If translations not loaded yet, wait a bit and try again
+            setTimeout(() => {
+                updateRelatedPostsTitle();
+            }, 50);
+            return;
+        }
+        
+        const titleEl = document.getElementById('relatedPostsTitle');
+        if (titleEl) {
+            const titleText = t('relatedPosts');
+            titleEl.textContent = titleText;
+        } else {
+            // Element not found, wait a bit and try again
+            setTimeout(() => {
+                updateRelatedPostsTitle();
+            }, 50);
+        }
+        
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        if (gridViewBtn) {
+            gridViewBtn.title = t('gridView');
+        }
+        
+        const listViewBtn = document.getElementById('listViewBtn');
+        if (listViewBtn) {
+            listViewBtn.title = t('listView');
+        }
+    }
+    
+    let relatedPostsView = 'grid';
+    
+    // Set view for related posts
+    function setRelatedPostsView(view) {
+        relatedPostsView = view;
+        const relatedPostsContainer = document.getElementById('relatedPostsContainer');
+        if (relatedPostsContainer) {
+            relatedPostsContainer.setAttribute('data-view', view);
+        }
+        
+        // Update toggle buttons
+        const toggleButtons = document.querySelectorAll('.view-toggle-articles button');
+        toggleButtons.forEach(btn => {
+            if (btn.getAttribute('data-view') === view) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get current language from localStorage
+        const currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+        
+        // Load translations first
+        await loadArticleTranslations();
+        
+        // Update article content based on current language from localStorage
+        updateArticleLanguage(currentLang);
+        
+        // Update content updating text on initial load
+        const updatingTextEl = document.getElementById('contentUpdatingText');
+        if (updatingTextEl) {
+            updatingTextEl.textContent = t('contentUpdating');
+        }
+        
+        // Wait a bit to ensure DOM is fully ready and other scripts have run
+        setTimeout(() => {
+            // Update related posts title (ensure translations are loaded and DOM is ready)
+            updateRelatedPostsTitle();
+            
+            // Load related posts
+            loadRelatedPosts();
+        }, 100);
+        
+        // Setup view toggle buttons
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        
+        if (gridViewBtn) {
+            gridViewBtn.addEventListener('click', function() {
+                setRelatedPostsView('grid');
+            });
+        }
+        
+        if (listViewBtn) {
+            listViewBtn.addEventListener('click', function() {
+                setRelatedPostsView('list');
+            });
+        }
+        
+        // Listen for language change events
+        window.addEventListener('languageChanged', async function(event) {
+            const newLang = event.detail?.langCode || 'vi';
+            
+            // Reload translations
+            await loadArticleTranslations();
+            
+            // Update related posts title and button tooltips
+            updateRelatedPostsTitle();
+            
+            // Update article content without reload
+            updateArticleLanguage(newLang);
+            
+            // Reload related posts with new language
+            loadRelatedPosts();
+        });
+    });
+    
+    // Update article content based on selected language
+    function updateArticleLanguage(langCode) {
+        // Check both PascalCase and camelCase for Translations
+        const translations = articleData?.Translations || articleData?.translations || [];
+        if (!articleData || !translations || translations.length === 0) return;
+        
+        // Find translation matching current language
+        let translation = null;
+        
+        // First try exact match (check both PascalCase and camelCase)
+        translation = translations.find(t => {
+            const lang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+            return lang === langCode.toLowerCase();
+        });
+        
+        // If no exact match, try language code prefix
+        if (!translation) {
+            translation = translations.find(t => {
+                const tLang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+                const currentLang = langCode.toLowerCase();
+                return tLang === currentLang || 
+                       tLang.substring(0, 2) === currentLang.substring(0, 2);
+            });
+        }
+        
+        // Fallback to first translation
+        if (!translation && translations.length > 0) {
+            translation = translations[0];
+        }
+        
+        if (!translation) return;
+        
+        // Get translation properties (check both PascalCase and camelCase)
+        const title = translation.Title || translation.title || 'Bài viết';
+        const summary = translation.Summary || translation.summary || '';
+        // Try Content first, then Description as fallback
+        const content = translation.Content || translation.content || 
+                       translation.Description || translation.description || '';
+        
+        // Update page title
+        if (document.title) {
+            document.title = title + ' - ' + (document.title.split(' - ')[1] || '');
+        }
+        
+        // Update article title
+        const titleEl = document.getElementById('articleTitle');
+        if (titleEl) {
+            titleEl.textContent = title;
+        }
+        
+        // Update article summary
+        const summaryEl = document.getElementById('articleSummary');
+        if (summaryEl) {
+            if (summary) {
+                summaryEl.innerHTML = summary;
+                summaryEl.style.display = '';
+            } else {
+                summaryEl.innerHTML = '';
+                summaryEl.style.display = 'none';
+            }
+        }
+
+        const figureEl = document.getElementById('articleFigure');
+        const imageEl = document.getElementById('articleImage');
+        const hasImage = !!(articleData?.Image || articleData?.image);
+        if (figureEl) {
+            figureEl.style.display = hasImage ? '' : 'none';
+        }
+        if (imageEl) {
+            imageEl.alt = title;
+        }
+        
+        // Update article content
+        const contentEl = document.getElementById('articleContent');
+        if (contentEl) {
+            if (content) {
+                contentEl.innerHTML = content;
+            } else {
+                const updatingText = t('contentUpdating');
+                contentEl.innerHTML = `<p class="text-muted">${updatingText}</p>`;
+            }
+            
+            // Update content updating text if exists
+            const updatingTextEl = document.getElementById('contentUpdatingText');
+            if (updatingTextEl) {
+                updatingTextEl.textContent = t('contentUpdating');
+            }
+        }
+        
+        // Update related posts title
+        updateRelatedPostsTitle();
+        
+        // Reload related posts with new language
+        loadRelatedPosts();
+    }
+    
+    async function loadRelatedPosts() {
+        const relatedPostsSection = document.getElementById('relatedPostsSection');
+        const relatedPostsContainer = document.getElementById('relatedPostsContainer');
+        
+        if (!relatedPostsSection || !relatedPostsContainer) return;
+        
+        // Use existing articleData from global scope (already loaded from server)
+        // Get CategoryIds from articleData (check both PascalCase and camelCase)
+        const categoryIds = articleData?.CategoryIds || articleData?.categoryIds || [];
+        const currentArticleId = String(articleData?.Id || articleData?.id || '');
+        
+        if (!categoryIds || categoryIds.length === 0) {
+            return; // No categories, no related posts
+        }
+        
+        // Get current language
+        let langCode = localStorage.getItem('selectedLanguage') || '@currentLang' || 'vi';
+        
+        try {
+            // Load articles from categories sequentially until we have 12 items
+            const allArticles = [];
+            const seenArticleIds = new Set();
+            const MAX_ARTICLES = 12;
+            
+            // Load articles from each category sequentially (no langCode - get all translations)
+            for (const categoryId of categoryIds) {
+                // Stop if we already have enough articles
+                if (allArticles.length >= MAX_ARTICLES) {
+                    break;
+                }
+                
+                try {
+                    // Calculate how many more articles we need
+                    const remaining = MAX_ARTICLES - allArticles.length;
+                    const pageSize = Math.min(remaining + 5, 12); // Load a bit more to account for filtering
+                    
+                    const response = await fetch(`/api/Portal/articles?categoryId=${encodeURIComponent(categoryId)}&pageNumber=1&pageSize=${pageSize}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.items && Array.isArray(data.items)) {
+                            // Process items from this category
+                            for (const item of data.items) {
+                                // Stop if we have enough articles
+                                if (allArticles.length >= MAX_ARTICLES) {
+                                    break;
+                                }
+                                
+                                // Convert item ID to string for comparison
+                                const itemId = String(item.id || '');
+                                
+                                // Skip current article and duplicates, only published articles
+                                if (itemId !== currentArticleId && 
+                                    !seenArticleIds.has(itemId) && 
+                                    item.published) {
+                                    seenArticleIds.add(itemId);
+                                    allArticles.push(item);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    // Error loading articles from category, continue to next category
+                    continue;
+                }
+            }
+            
+            // Sort by DateAdd (newest first) and take exactly 12
+            const sortedArticles = allArticles
+                .sort((a, b) => {
+                    const dateA = a.dateAdd ? new Date(a.dateAdd) : new Date(0);
+                    const dateB = b.dateAdd ? new Date(b.dateAdd) : new Date(0);
+                    return dateB - dateA;
+                })
+                .slice(0, MAX_ARTICLES);
+            
+            if (sortedArticles.length === 0) {
+                return;
+            }
+            
+            // Render related posts - use current language from localStorage
+            const currentLang = localStorage.getItem('selectedLanguage') || langCode || 'vi';
+            renderRelatedPosts(sortedArticles, currentLang, '@pageSlug');
+            
+            // Show section
+            relatedPostsSection.style.display = 'block';
+        } catch (error) {
+            // Error loading related posts
+        }
+    }
+    
+    function renderRelatedPosts(articles, langCode, pageSlug) {
+        const relatedPostsContainer = document.getElementById('relatedPostsContainer');
+        if (!relatedPostsContainer) return;
+        
+        relatedPostsContainer.innerHTML = '';
+        relatedPostsContainer.setAttribute('data-view', relatedPostsView);
+        
+        // Always get current language from localStorage (not from parameter)
+        const currentLang = localStorage.getItem('selectedLanguage') || langCode || 'vi';
+        
+        articles.forEach(article => {
+            // Find translation matching current language
+            let translation = null;
+            if (article.translations && Array.isArray(article.translations)) {
+                // First try exact match (check both PascalCase and camelCase)
+                translation = article.translations.find(t => {
+                    const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                    return tLang === currentLang.toLowerCase();
+                });
+                
+                // If no exact match, try language code prefix
+                if (!translation) {
+                    translation = article.translations.find(t => {
+                        const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                        const lang = currentLang.toLowerCase();
+                        return tLang.substring(0, 2) === lang.substring(0, 2);
+                    });
+                }
+                
+                // Fallback to first translation
+                if (!translation && article.translations.length > 0) {
+                    translation = article.translations[0];
+                }
+            }
+            
+            if (!translation) return;
+            
+            // Get translation properties (check both PascalCase and camelCase)
+            const articleId = article.id || article.Id || '';
+            const urlSlug = translation.urlSlug || translation.UrlSlug || '';
+            const title = translation.title || translation.Title || '';
+            // Try summary first, then description, then content as fallback
+            const summary = translation.summary || translation.Summary || 
+                           translation.description || translation.Description || 
+                           translation.content || translation.Content || '';
+            const image = article.image || article.Image || '';
+            
+            // Generate link - always use direct route format: /article/{slug}
+            const defaultSlug = urlSlug || 'article'; // Use 'article' as default if no urlSlug
+            const link = `/article/${defaultSlug}`;
+            
+            // Render HTML summary directly (CSS will handle truncation)
+            const summaryHtml = summary || '';
+            
+            // Create article item (no Bootstrap grid wrapper - use CSS Grid)
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'related-post-item';
+            
+            itemDiv.innerHTML = `
+                ${image ? `<div class="related-post-media"><a href="${escapeHtml(link)}" class="related-post-media__link"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" class="related-post-image" onerror="this.closest('.related-post-media').style.display='none'"></a></div>` : ''}
+                <div class="related-post-body">
+                    <h4 class="related-post-title">
+                        <a href="${escapeHtml(link)}">${escapeHtml(title)}</a>
+                    </h4>
+                    ${summaryHtml ? `<div class="related-post-summary">${summaryHtml}</div>` : ''}
+                    <div class="related-post-meta">
+                        <a href="${escapeHtml(link)}" class="heritage-btn-continue">${escapeHtml(t('viewContinue') || t('viewDetails'))}</a>
+                    </div>
+                </div>
+            `;
+            
+            relatedPostsContainer.appendChild(itemDiv);
+        });
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+

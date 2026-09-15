@@ -1,0 +1,923 @@
+@{
+    var settings = await ApiService.GetSettingsAsync();
+    var siteName = settings?.GetValueOrDefault("SITE_NAME", "CreativeWeb");
+    var siteLogo = settings?.GetValueOrDefault("SITE_LOGO", "");
+    var hotline = settings?.GetValueOrDefault("SITE_PHONE", "");
+    var email = settings?.GetValueOrDefault("SITE_EMAIL", "");
+    var languages = await ApiService.GetLanguagesAsync();
+}
+
+<header class="heritage-header" id="heritageHeader">
+    <div class="heritage-header-inner">
+        <a class="heritage-logo" href="@Url.Action("Index", "Home")">
+            @if (!string.IsNullOrEmpty(siteLogo))
+            {
+                <img src="@siteLogo" alt="@siteName" />
+            }
+            else
+            {
+                <span class="heritage-logo-text">@siteName</span>
+            }
+        </a>
+
+        <nav class="heritage-nav-desktop" aria-label="Menu chính">
+            <ul class="heritage-menu-list" id="menuItems">
+                <!-- Menu items loaded from API -->
+            </ul>
+        </nav>
+
+        <div class="heritage-header-actions">
+            @if (languages != null && languages.Any())
+            {
+                <div class="heritage-lang" id="heritageLangSwitcher">
+                    @foreach (var lang in languages)
+                    {
+                        <button type="button"
+                                class="lang-option @(lang.IsDefault ? "lang-active active" : "")"
+                                data-heritage-lang="@lang.Code"
+                                title="@lang.Name">@lang.Code.ToUpper()</button>
+                        @if (!lang.Equals(languages.Last()))
+                        {
+                            <span class="lang-sep">/</span>
+                        }
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="heritage-lang">
+                    <span class="lang-active">VI</span>
+                    <span class="lang-sep">/</span>
+                    <button type="button" class="lang-option" data-heritage-lang="en">EN</button>
+                </div>
+            }
+            <button type="button" class="heritage-menu-toggle" id="heritageMenuToggle" aria-label="Mở menu">
+                <i class="bi bi-list" style="font-size:1.5rem"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="heritage-mobile-menu" id="heritageMobileMenu" aria-hidden="true">
+    <div class="heritage-mobile-menu-header">
+        @if (!string.IsNullOrEmpty(siteLogo))
+        {
+            <img src="@siteLogo" alt="@siteName" />
+        }
+        else
+        {
+            <span class="heritage-logo-text">@siteName</span>
+        }
+        <button type="button" class="heritage-mobile-close" id="heritageMenuClose" aria-label="Đóng menu">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <nav class="heritage-mobile-nav" id="heritageMobileNav"></nav>
+    <div class="heritage-mobile-footer">
+        @if (!string.IsNullOrEmpty(hotline))
+        {
+            <span>@(hotline)</span>
+        }
+        @if (!string.IsNullOrEmpty(hotline) && !string.IsNullOrEmpty(email))
+        {
+            <span> · </span>
+        }
+        @if (!string.IsNullOrEmpty(email))
+        {
+            <span>@email</span>
+        }
+    </div>
+</div>
+
+<script>
+    // Header scroll state
+    window.addEventListener('scroll', function() {
+        const header = document.getElementById('heritageHeader');
+        if (!header) return;
+        if (window.scrollY > 50) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+    });
+    
+    // Load menu from API
+    async function loadMenu(langCode) {
+        try {
+            const response = await fetch(`/api/Api/menus/primary`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                return Promise.resolve();
+            }
+            
+            // Parse JSON
+            const menus = JSON.parse(await response.text());
+            if (!menus || menus.length === 0) {
+                return Promise.resolve();
+            }
+            
+            // Save menu to localStorage
+            try {
+                localStorage.setItem('menuData', JSON.stringify(menus));
+            } catch (e) {
+                // Ignore localStorage errors
+            }
+            
+            // Build menu tree
+            const menuTree = buildMenuTree(menus);
+            renderMenu(menuTree);
+            
+            // Set active nav link based on current page
+            setActiveNavLink();
+            
+            // Check current URL slug against menu
+            checkCurrentUrlSlugInMenu(menus);
+            
+            window.dispatchEvent(new CustomEvent('menuLoaded'));
+            
+            return Promise.resolve();
+        } catch (error) {
+            // Error loading menu
+            return Promise.resolve();
+        }
+    }
+    
+    // Build hierarchical menu tree
+    function buildMenuTree(menus) {
+        const menuMap = new Map();
+        const rootMenus = [];
+        
+        // First pass: create all menu items
+        menus.forEach(menu => {
+            menuMap.set(menu.id, {
+                ...menu,
+                children: []
+            });
+        });
+        
+        // Second pass: build tree structure
+        menus.forEach(menu => {
+            const menuItem = menuMap.get(menu.id);
+            if (menu.parentId && menuMap.has(menu.parentId)) {
+                menuMap.get(menu.parentId).children.push(menuItem);
+            } else {
+                rootMenus.push(menuItem);
+            }
+        });
+        
+        // Sort by sortOrder
+        const sortMenus = (menus) => {
+            menus.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+            menus.forEach(menu => {
+                if (menu.children.length > 0) {
+                    sortMenus(menu.children);
+                }
+            });
+        };
+        
+        sortMenus(rootMenus);
+        return rootMenus;
+    }
+    
+    // Render menu items
+    function renderMenu(menuTree) {
+        const menuContainer = document.getElementById('menuItems');
+        if (!menuContainer) return;
+        
+        menuContainer.innerHTML = '';
+        
+        menuTree.forEach(menu => {
+            const menuItem = createMenuItem(menu);
+            menuContainer.appendChild(menuItem);
+        });
+    }
+    
+    // Get current language code
+    function getCurrentLanguageCode() {
+        return localStorage.getItem('selectedLanguage') || 'vi';
+    }
+    
+    // Generate slug from title
+    function generateSlug(title) {
+        if (!title) return '';
+        
+        // Convert to lowercase
+        let slug = title.toLowerCase();
+        
+        // Replace Vietnamese characters
+        slug = slug.replace(/à|á|ạ|ả|ã|ầ|ấ|ậ|ẩ|ẫ|ằ|ắ|ặ|ẳ|ẵ/g, 'a');
+        slug = slug.replace(/è|é|ẹ|ẻ|ẽ|ề|ế|ệ|ể|ễ/g, 'e');
+        slug = slug.replace(/ì|í|ị|ỉ|ĩ/g, 'i');
+        slug = slug.replace(/ò|ó|ọ|ỏ|õ|ồ|ố|ộ|ổ|ỗ|ờ|ớ|ợ|ở|ỡ/g, 'o');
+        slug = slug.replace(/ù|ú|ụ|ủ|ũ|ừ|ứ|ự|ử|ữ/g, 'u');
+        slug = slug.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, 'y');
+        slug = slug.replace(/đ/g, 'd');
+        
+        // Replace spaces and special characters with hyphens
+        slug = slug.replace(/[^a-z0-9\s-]/g, '');
+        slug = slug.replace(/\s+/g, '-');
+        slug = slug.replace(/-+/g, '-');
+        slug = slug.replace(/^-+|-+$/g, '');
+        
+        return slug;
+    }
+    
+    // Create menu item element
+    function createMenuItem(menu) {
+        const li = document.createElement('li');
+        li.className = 'nav-item';
+        
+        // Get translation for current language
+        // Note: API already filters translations by langCode, so we should get the correct one
+        // But we'll still check to be safe
+        const currentLang = getCurrentLanguageCode().toLowerCase().trim();
+        let translation = null;
+        
+        if (menu.translations && menu.translations.length > 0) {
+            // API should have already filtered by langCode, so we can take the first one
+            // But let's verify it matches current language
+            translation = menu.translations.find(t => {
+                if (!t.languageCode) return false;
+                const tLang = String(t.languageCode).toLowerCase().trim();
+                return tLang === currentLang || tLang.substring(0, 2) === currentLang.substring(0, 2);
+            });
+            
+            // If not found by exact match, use first translation (API should have filtered correctly)
+            if (!translation) {
+                translation = menu.translations[0];
+            }
+            
+            // Debug log if translation language doesn't match
+            if (translation && translation.languageCode) {
+                const tLang = String(translation.languageCode).toLowerCase().trim();
+                if (tLang !== currentLang && tLang.substring(0, 2) !== currentLang.substring(0, 2)) {
+                    // Language mismatch - using available translation
+                }
+            }
+        }
+        
+        if (!translation || !translation.title) {
+            return li; // Skip if no translation
+        }
+        
+        // Normalize and parse field values (handle both camelCase and lowercase, boolean/string)
+        const isHomePageRaw = menu.isHomePage !== undefined ? menu.isHomePage : (menu.ishomepage !== undefined ? menu.ishomepage : false);
+        const isHomePage = isHomePageRaw === true || isHomePageRaw === 'true' || isHomePageRaw === 1 || isHomePageRaw === '1';
+        
+        const showSinglePostRaw = menu.showSinglePost !== undefined ? menu.showSinglePost : (menu.showsinglepost !== undefined ? menu.showsinglepost : false);
+        const showSinglePost = showSinglePostRaw === true || showSinglePostRaw === 'true' || showSinglePostRaw === 1 || showSinglePostRaw === '1';
+        
+        // Parse useLink - normalize to boolean
+        const useLinkRaw = menu.useLink !== undefined ? menu.useLink : (menu.uselink !== undefined ? menu.uselink : false);
+        const useLink = useLinkRaw === true || useLinkRaw === 'true' || useLinkRaw === 1 || useLinkRaw === '1';
+        
+        // Parse linkType - normalize to lowercase
+        const linkTypeRaw = menu.linkType || menu.linktype || '';
+        const linkType = linkTypeRaw ? String(linkTypeRaw).toLowerCase().trim() : 'internal';
+        
+        // Parse linkTarget - keep original case for useLink, normalize for other uses
+        const linkTargetRaw = menu.linkTarget || menu.linktarget || '';
+        const linkTarget = linkTargetRaw ? String(linkTargetRaw).trim() : '';
+        const linkTargetLower = linkTarget ? linkTarget.toLowerCase().trim() : '';
+        
+        const singlePostId = menu.singlePostId || menu.singlepostid || null;
+        
+        // Build URL based on routing rules
+        let href = '#';
+        const urlSlug = translation.urlSlug || '';
+        const urlSlugLower = urlSlug ? urlSlug.toLowerCase().trim() : '';
+        
+        // Debug: Log routing info for troubleshooting
+        const debugInfo = {
+            title: translation.title,
+            urlSlug: urlSlug,
+            urlSlugLower: urlSlugLower,
+            linkType: linkType,
+            linkTarget: linkTarget,
+            useLink: useLink,
+            isHomePage: isHomePage,
+            showSinglePost: showSinglePost,
+            singlePostId: singlePostId,
+            languageCode: translation.languageCode
+        };
+        
+        // Priority 1: If isHomePage = true, return /home (regardless of linkType)
+        if (isHomePage) {
+            href = '/home';
+        }
+        // Priority 2: If useLink = true and has linkTarget, use linkTarget directly and add slug for SEO
+        else if (useLink && linkTarget) {
+            // Get urlSlug from translation for SEO
+            const urlSlug = translation.urlSlug || '';
+            
+            // Use linkTarget directly when useLink is true
+            if (linkType === 'internal') {
+                // Internal link - add domain if not already present
+                let baseUrl = '';
+                if (linkTarget.startsWith('http://') || linkTarget.startsWith('https://')) {
+                    // Already has protocol, use as is
+                    baseUrl = linkTarget;
+                } else if (linkTarget.startsWith('/')) {
+                    // Relative path starting with /, add domain
+                    baseUrl = window.location.origin + linkTarget;
+                } else {
+                    // Relative path without /, add domain and /
+                    baseUrl = window.location.origin + '/' + linkTarget;
+                }
+                
+                // Add slug to link for SEO (as query parameter if URL has query, otherwise append to path)
+                if (urlSlug && urlSlug.trim()) {
+                    const slug = urlSlug.trim();
+                    if (baseUrl.includes('?')) {
+                        // URL already has query parameters, add slug as additional parameter
+                        href = baseUrl + '&s=' + encodeURIComponent(slug);
+                    } else {
+                        // No query parameters, add slug as query parameter
+                        href = baseUrl + '?s=' + encodeURIComponent(slug);
+                    }
+                } else {
+                    href = baseUrl;
+                }
+            } else {
+                // External link - use linkTarget as is and add slug for SEO
+                let baseUrl = linkTarget.startsWith('http://') || linkTarget.startsWith('https://') 
+                    ? linkTarget 
+                    : (linkTarget.startsWith('/') ? linkTarget : '/' + linkTarget);
+                
+                // Add slug to external link for SEO
+                if (urlSlug && urlSlug.trim()) {
+                    const slug = urlSlug.trim();
+                    if (baseUrl.includes('?')) {
+                        href = baseUrl + '&s=' + encodeURIComponent(slug);
+                    } else {
+                        href = baseUrl + '?s=' + encodeURIComponent(slug);
+                    }
+                } else {
+                    href = baseUrl;
+                }
+            }
+        }
+        // Priority 3: If showSinglePost = true and has singlePostId, return /content/{slug} (regardless of linkType)
+        else if (showSinglePost && singlePostId) {
+            // Use urlSlug from API response (singlePostTranslations is already included in menu response from GetPrimaryMenu)
+            let slug = singlePostId; // Default to ID
+            
+            // Priority 1: Get urlSlug from singlePostTranslations based on current language
+            const singlePostTranslations = menu.singlePostTranslations || menu.singleposttranslations || null;
+            if (singlePostTranslations && Array.isArray(singlePostTranslations) && singlePostTranslations.length > 0) {
+                const currentLang = getCurrentLanguageCode().toLowerCase().trim();
+                
+                // Find translation for current language
+                let foundTranslation = singlePostTranslations.find(t => 
+                    t.languageCode && String(t.languageCode).toLowerCase().trim() === currentLang
+                );
+                
+                // If not found, try 2-char prefix match
+                if (!foundTranslation) {
+                    foundTranslation = singlePostTranslations.find(t => 
+                        t.languageCode && String(t.languageCode).toLowerCase().trim().substring(0, 2) === currentLang.substring(0, 2)
+                    );
+                }
+                
+                // If still not found, use first translation
+                if (!foundTranslation) {
+                    foundTranslation = singlePostTranslations[0];
+                }
+                
+                // Get urlSlug from translation (handle both camelCase and lowercase)
+                const urlSlug = foundTranslation.urlSlug || foundTranslation.urlslug || null;
+                if (urlSlug && String(urlSlug).trim()) {
+                    slug = String(urlSlug).trim();
+                }
+            }
+            
+            // Priority 2: Fallback to generate slug from menu translation title
+            if (slug === singlePostId && translation && translation.title) {
+                slug = generateSlug(translation.title);
+            }
+            
+            href = '/content/' + slug;
+        }
+        // Priority 4: Check if urlSlug is "contact" (case-insensitive) OR linkTarget is "contact" - route to /contact
+        else if (urlSlugLower === 'contact' || linkTargetLower === 'contact') {
+            // Contact link - always route to /contact regardless of linkType
+            href = '/contact';
+        }
+        // Priority 4b: Gallery / Album menu links
+        else if (urlSlugLower === 'gallery' || urlSlugLower === 'album'
+            || linkTargetLower === 'gallery' || linkTargetLower === 'album'
+            || linkTargetLower === '/gallery' || linkTargetLower === '/album') {
+            href = '/gallery';
+        }
+        // Priority 4c: Events hub
+        else if (urlSlugLower === 'events' || urlSlugLower === 'su-kien' || urlSlugLower === 'lich-su-kien'
+            || linkTargetLower === 'events' || linkTargetLower === 'su-kien'
+            || linkTargetLower === '/events' || linkTargetLower === '/su-kien') {
+            href = '/events';
+        }
+        // Priority 5: Handle by linkType (internal/external)
+        else if (linkType === 'external' && urlSlug) {
+            // External link - use urlSlug directly
+            href = urlSlug;
+        }
+        else if (linkType === 'internal' && urlSlug) {
+            // Internal link - route to /page/{slug}
+            href = '/page/' + urlSlug;
+        }
+        // Fallback: use urlSlug directly
+        else if (urlSlug) {
+            href = '/' + urlSlug;
+        }
+        
+        
+        const link = document.createElement('a');
+        link.className = 'nav-link';
+        link.href = href;
+        link.textContent = translation.title;
+        
+        // Handle linkType and linkTarget based on useLink
+        // If useLink = true: check linkType - internal loads in current tab, external opens in new tab
+        // If useLink = false: use existing logic
+        if (useLink) {
+            // When useLink is true, check linkType
+            if (linkType === 'internal') {
+                // Internal link - load in current tab
+                link.removeAttribute('target');
+                link.removeAttribute('rel');
+            } else {
+                // External link (or not internal) - open in new tab
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            }
+        } else {
+            // Original logic when useLink is false
+            // Priority: linkType > linkTarget
+            // If linkType is 'external', always open in new tab
+            // If linkType is 'internal' or not set, check linkTarget
+            if (linkType === 'external') {
+                // External link - open in new tab
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            } else {
+                // Internal link - check linkTarget
+                if (linkTargetLower === '_blank') {
+                    // Explicitly set to open in new tab (even for internal links)
+                    link.setAttribute('target', '_blank');
+                    link.setAttribute('rel', 'noopener noreferrer');
+                } else {
+                    // Internal link - MUST load in current tab
+                    // Explicitly ensure no target attribute exists
+                    // Do NOT set target attribute at all for internal links
+                    // This ensures the link loads in the current tab
+                    link.removeAttribute('target');
+                    link.removeAttribute('rel');
+                }
+            }
+        }
+        
+        // Handle submenu
+        if (menu.children && menu.children.length > 0) {
+            link.classList.add('dropdown-toggle');
+            // Remove data-bs-toggle to prevent Bootstrap click behavior, use hover instead
+            link.setAttribute('aria-expanded', 'false');
+            link.setAttribute('aria-haspopup', 'true');
+            
+            const dropdownMenu = document.createElement('ul');
+            dropdownMenu.className = 'dropdown-menu';
+            
+            menu.children.forEach(child => {
+                const childItem = createMenuItem(child);
+                if (childItem && childItem.textContent.trim() !== '') {
+                    dropdownMenu.appendChild(childItem);
+                }
+            });
+            
+            if (dropdownMenu.children.length > 0) {
+                li.appendChild(link);
+                li.appendChild(dropdownMenu);
+                li.classList.add('dropdown');
+            } else {
+                // No valid children, just add the link
+                li.appendChild(link);
+            }
+        } else {
+            li.appendChild(link);
+        }
+        
+        return li;
+    }
+    
+    // Set active nav link based on current page
+    function setActiveNavLink() {
+        const currentPath = window.location.pathname.toLowerCase();
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        // Remove active class from all links first
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Find and set active link
+        let activeFound = false;
+        navLinks.forEach(link => {
+            try {
+                const linkPath = new URL(link.href, window.location.origin).pathname.toLowerCase();
+                
+                // Exact match
+                if (currentPath === linkPath) {
+                    link.classList.add('active');
+                    activeFound = true;
+                }
+                // For non-root paths, check if current path starts with link path (but not vice versa)
+                else if (currentPath !== '/' && linkPath !== '/' && currentPath.startsWith(linkPath) && linkPath.length > 1) {
+                    // Only set active if it's a more specific match (not already found exact match)
+                    if (!activeFound) {
+                        link.classList.add('active');
+                    }
+                }
+            } catch (e) {
+                // Ignore invalid URLs
+            }
+        });
+    }
+    
+    // Check current URL slug against menu items
+    function checkCurrentUrlSlugInMenu(menus) {
+        if (!menus || menus.length === 0) {
+            // Try to load from localStorage
+            try {
+                const savedMenu = localStorage.getItem('menuData');
+                if (savedMenu) {
+                    menus = JSON.parse(savedMenu);
+                }
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        if (!menus || menus.length === 0) {
+            return null;
+        }
+        
+        // Get current URL path
+        const currentPath = window.location.pathname;
+        const currentPathLower = currentPath.toLowerCase();
+        
+        // Extract potential slug from current path
+        // Examples: /page/about-us, /content/123, /article/123, /event/123, /book/123, /product/123
+        let currentSlug = '';
+        if (currentPathLower.startsWith('/page/')) {
+            currentSlug = currentPath.substring(6); // Remove '/page/'
+        } else if (currentPathLower.startsWith('/content/')) {
+            currentSlug = currentPath.substring(9); // Remove '/content/'
+        } else if (currentPathLower.startsWith('/article/')) {
+            currentSlug = currentPath.substring(9); // Remove '/article/'
+        } else if (currentPathLower.startsWith('/event/')) {
+            currentSlug = 'events';
+        } else if (currentPathLower.startsWith('/book/')) {
+            currentSlug = currentPath.substring(6); // Remove '/book/'
+        } else if (currentPathLower.startsWith('/product/')) {
+            currentSlug = currentPath.substring(9); // Remove '/product/'
+        } else if (currentPathLower === '/home' || currentPathLower === '/') {
+            currentSlug = 'home';
+        } else if (currentPathLower === '/contact') {
+            currentSlug = 'contact';
+        } else if (currentPathLower === '/gallery' || currentPathLower === '/album') {
+            currentSlug = 'gallery';
+        } else if (currentPathLower.startsWith('/gallery/')) {
+            currentSlug = 'gallery';
+        } else if (currentPathLower === '/events' || currentPathLower === '/su-kien') {
+            currentSlug = 'events';
+        } else if (currentPathLower.startsWith('/notification/')) {
+            currentSlug = 'events';
+        } else if (currentPathLower.startsWith('/album/')) {
+            currentSlug = 'gallery';
+        }
+        
+        // Find menu item matching current slug
+        let matchedMenu = null;
+        for (const menu of menus) {
+            // Check menu translations
+            if (menu.translations && menu.translations.length > 0) {
+                for (const translation of menu.translations) {
+                    const urlSlug = translation.urlSlug || '';
+                    const urlSlugLower = urlSlug.toLowerCase().trim();
+                    
+                    // Check if current slug matches menu urlSlug
+                    if (urlSlugLower === currentSlug.toLowerCase().trim()) {
+                        matchedMenu = menu;
+                        break;
+                    }
+                    
+                    // Check if current path contains the slug
+                    if (urlSlugLower && currentPathLower.includes(urlSlugLower)) {
+                        matchedMenu = menu;
+                        break;
+                    }
+                }
+            }
+            
+            // Also check singlePostTranslations if menu has showSinglePost
+            if (!matchedMenu && (menu.showSinglePost || menu.showsinglepost) && (menu.singlePostTranslations || menu.singleposttranslations)) {
+                const singlePostTranslations = menu.singlePostTranslations || menu.singleposttranslations || [];
+                if (Array.isArray(singlePostTranslations)) {
+                    for (const spTrans of singlePostTranslations) {
+                        const urlSlug = spTrans.urlSlug || spTrans.urlslug || '';
+                        const urlSlugLower = urlSlug.toLowerCase().trim();
+                        
+                        // Check if current slug matches singlePost urlSlug
+                        if (urlSlugLower === currentSlug.toLowerCase().trim()) {
+                            matchedMenu = menu;
+                            break;
+                        }
+                        
+                        // Check if current path contains the slug
+                        if (urlSlugLower && currentPathLower.includes(urlSlugLower)) {
+                            matchedMenu = menu;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (matchedMenu) break;
+        }
+        
+        if (matchedMenu) {
+            const singlePostTranslations = matchedMenu.singlePostTranslations || matchedMenu.singleposttranslations || null;
+            
+            // Store matched menu in localStorage for use in other pages
+            try {
+                localStorage.setItem('currentMenuMatch', JSON.stringify(matchedMenu));
+            } catch (e) {
+                // Failed to save matched menu to localStorage
+            }
+            
+            return matchedMenu;
+        } else {
+            return null;
+        }
+    }
+    
+    // Helper function to find menu in flat array or tree structure
+    function findMenuInData(menus, predicate) {
+        if (!menus || !Array.isArray(menus)) return null;
+        
+        for (const menu of menus) {
+            if (predicate(menu)) {
+                return menu;
+            }
+            
+            // Check children recursively
+            if (menu.children && Array.isArray(menu.children) && menu.children.length > 0) {
+                const found = findMenuInData(menu.children, predicate);
+                if (found) return found;
+            }
+        }
+        
+        return null;
+    }
+    
+    // Get single post translations from menu by menuId
+    // Only uses singlePostTranslations (languageCode and urlSlug)
+    function getSinglePostTranslationsFromMenu(menuId) {
+        try {
+            const savedMenu = localStorage.getItem('menuData');
+            if (!savedMenu) return null;
+            
+            const menus = JSON.parse(savedMenu);
+            const menu = findMenuInData(menus, m => {
+                const mId = m.id || m.Id || null;
+                return mId && String(mId).trim() === String(menuId).trim();
+            });
+            
+            if (!menu) return null;
+            
+            // Only use singlePostTranslations (has languageCode and urlSlug)
+            const singlePostTranslations = menu.singlePostTranslations || menu.singleposttranslations || null;
+            if (singlePostTranslations && Array.isArray(singlePostTranslations) && singlePostTranslations.length > 0) {
+                return singlePostTranslations;
+            }
+            
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+    
+    // Get single post translations from menu by menuId (deprecated - use getSinglePostTranslationsFromMenu)
+    // Kept for backward compatibility
+    function getSinglePostFromMenu(menuId) {
+        // Return singlePostTranslations as object structure for compatibility
+        const translations = getSinglePostTranslationsFromMenu(menuId);
+        if (!translations) return null;
+        
+        return {
+            translations: translations
+        };
+    }
+    
+    // Get single post translation by language code from menu
+    function getSinglePostTranslationFromMenu(menuId, langCode) {
+        try {
+            const translations = getSinglePostTranslationsFromMenu(menuId);
+            if (!translations || translations.length === 0) return null;
+            
+            const langCodeLower = String(langCode || '').toLowerCase().trim();
+            
+            // Try exact match first
+            let translation = translations.find(t => {
+                const tLang = String(t.languageCode || t.LanguageCode || '').toLowerCase().trim();
+                return tLang === langCodeLower;
+            });
+            
+            // If not found, try 2-char prefix match
+            if (!translation && langCodeLower.length >= 2) {
+                const langPrefix = langCodeLower.substring(0, 2);
+                translation = translations.find(t => {
+                    const tLang = String(t.languageCode || t.LanguageCode || '').toLowerCase().trim();
+                    return tLang.length >= 2 && tLang.substring(0, 2) === langPrefix;
+                });
+            }
+            
+            // If still not found, use first translation
+            if (!translation) {
+                translation = translations[0];
+            }
+            
+            return translation;
+        } catch (e) {
+            return null;
+        }
+    }
+    
+    // Get menu item by singlePostId
+    function getMenuBySinglePostId(singlePostId) {
+        try {
+            const savedMenu = localStorage.getItem('menuData');
+            if (!savedMenu) return null;
+            
+            const menus = JSON.parse(savedMenu);
+            const menu = findMenuInData(menus, m => {
+                const spId = m.singlePostId || m.singlepostid || null;
+                return spId && String(spId).trim() === String(singlePostId).trim();
+            });
+            
+            return menu || null;
+        } catch (e) {
+            return null;
+        }
+    }
+    
+    // Get menu item by urlSlug (from singlePost translations)
+    function getMenuBySinglePostUrlSlug(urlSlug) {
+        try {
+            const savedMenu = localStorage.getItem('menuData');
+            if (!savedMenu) return null;
+            
+            const menus = JSON.parse(savedMenu);
+            const urlSlugLower = String(urlSlug || '').toLowerCase().trim();
+            
+            const menu = findMenuInData(menus, m => {
+                // Only check singlePostTranslations (has languageCode and urlSlug)
+                if (!(m.showSinglePost || m.showsinglepost)) return false;
+                
+                const singlePostTranslations = m.singlePostTranslations || m.singleposttranslations || null;
+                if (singlePostTranslations && Array.isArray(singlePostTranslations)) {
+                    const found = singlePostTranslations.find(t => {
+                        const tSlug = String(t.urlSlug || t.urlslug || '').toLowerCase().trim();
+                        return tSlug === urlSlugLower;
+                    });
+                    if (found) return true;
+                }
+                
+                return false;
+            });
+            
+            return menu || null;
+        } catch (e) {
+            return null;
+        }
+    }
+    
+    // Make checkCurrentUrlSlugInMenu available globally
+    window.checkCurrentUrlSlugInMenu = checkCurrentUrlSlugInMenu;
+    
+    // Make loadMenu available globally
+    window.loadMenu = loadMenu;
+    
+    // Make helper functions available globally
+    window.getSinglePostTranslationsFromMenu = getSinglePostTranslationsFromMenu;
+    window.getSinglePostFromMenu = getSinglePostFromMenu;
+    window.getSinglePostTranslationFromMenu = getSinglePostTranslationFromMenu;
+    window.getMenuBySinglePostId = getMenuBySinglePostId;
+    window.getMenuBySinglePostUrlSlug = getMenuBySinglePostUrlSlug;
+    window.findMenuInData = findMenuInData;
+    
+    // Ensure internal menu links don't open in new tab
+    function ensureInternalLinks() {
+        const menuLinks = document.querySelectorAll('#menuItems .nav-link');
+        menuLinks.forEach(link => {
+            // Only process links that don't have target="_blank"
+            if (!link.hasAttribute('target') || link.getAttribute('target') !== '_blank') {
+                // Ensure internal links load in current tab
+                link.removeAttribute('target');
+                
+                // Add click handler to prevent any default new tab behavior
+                link.addEventListener('click', function(e) {
+                    // Only prevent default if it's not an external link
+                    if (!this.hasAttribute('target') || this.getAttribute('target') !== '_blank') {
+                        // Allow normal navigation in current tab
+                        // Don't prevent default, just ensure target is correct
+                        if (this.hasAttribute('target') && this.getAttribute('target') === '_blank') {
+                            // This is external, allow it
+                            return true;
+                        }
+                        // Internal link - ensure it stays in current tab
+                        this.removeAttribute('target');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Initialize menu on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get current language from localStorage or default
+        const currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+        
+        // Try to load menu from localStorage first for faster display
+        let menuData = null;
+        try {
+            const savedMenu = localStorage.getItem('menuData');
+            if (savedMenu) {
+                menuData = JSON.parse(savedMenu);
+            }
+        } catch (e) {
+            // Failed to load menu from localStorage
+        }
+        
+        // Load menu from API (will update localStorage)
+        loadMenu(currentLang).then(() => {
+            // After menu is loaded, ensure internal links are correct
+            setTimeout(ensureInternalLinks, 100);
+            
+            // Check current URL slug against menu
+            setTimeout(() => {
+                // Try to get menu from localStorage if available
+                let menus = null;
+                try {
+                    const savedMenu = localStorage.getItem('menuData');
+                    if (savedMenu) {
+                        menus = JSON.parse(savedMenu);
+                    }
+                } catch (e) {
+                    // Failed to load menu from localStorage for URL check
+                }
+                
+                if (menus) {
+                    checkCurrentUrlSlugInMenu(menus);
+                }
+            }, 200);
+        });
+        
+        // If we have menu data from localStorage, check URL immediately
+        if (menuData) {
+            setTimeout(() => {
+                checkCurrentUrlSlugInMenu(menuData);
+            }, 100);
+        }
+        
+        // Listen for language change events
+        window.addEventListener('languageChanged', function(event) {
+            const newLang = event.detail?.langCode || currentLang;
+            loadMenu(newLang).then(() => {
+                // After menu is reloaded, ensure internal links are correct
+                setTimeout(ensureInternalLinks, 100);
+                
+                // Re-check URL slug after language change
+                setTimeout(() => {
+                    let menus = null;
+                    try {
+                        const savedMenu = localStorage.getItem('menuData');
+                        if (savedMenu) {
+                            menus = JSON.parse(savedMenu);
+                        }
+                    } catch (e) {
+                        // Failed to load menu from localStorage for URL check
+                    }
+                    
+                    if (menus) {
+                        checkCurrentUrlSlugInMenu(menus);
+                    }
+                }, 200);
+            });
+        });
+    });
+</script>
+

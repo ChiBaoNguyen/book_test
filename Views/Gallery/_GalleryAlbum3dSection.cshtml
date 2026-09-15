@@ -1,0 +1,23 @@
+@model GalleryAlbumSectionViewModel
+@{
+    var sectionId = Model?.SectionId ?? "gallery3dSection";
+    var gridId = Model?.GridId ?? "gallery3dAlbums";
+    var paginationId = Model?.PaginationId ?? "gallery3dPagination";
+    var sectionLabel = Model?.SectionLabel ?? "MÔ HÌNH 3D";
+    var paginationLabel = Model?.PaginationAriaLabel ?? "Phân trang album 3D";
+    var mediaType = Model?.MediaType ?? "file3d";
+    var sectionClass = Model?.IsRelated == true ? "content-section gallery-related-section" : "content-section";
+}
+
+<div class="@sectionClass" id="@sectionId" data-media-type="@mediaType">
+    <div class="gallery-section__head">
+        <div>
+            <p class="heritage-section-label">@sectionLabel</p>
+            <div class="heritage-gold-bar"></div>
+        </div>
+    </div>
+    <div class="gallery-album-grid" id="@gridId">
+        <div class="gallery-loading"><div class="spinner-border spinner-border-sm text-warning" role="status"></div></div>
+    </div>
+    <div class="gallery-album-pagination d-none" id="@paginationId" aria-label="@paginationLabel"></div>
+</div>

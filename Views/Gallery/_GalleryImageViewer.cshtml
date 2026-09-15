@@ -1,0 +1,28 @@
+@model GalleryMediaViewerViewModel
+@{
+    var gridId = Model?.GridId ?? "galleryDetailImages";
+    var paginationId = Model?.PaginationId ?? "galleryDetailImagesPagination";
+    var panelKey = Model?.PanelKey ?? "image";
+    var gridClass = Model?.GridClass ?? "gallery-media-grid";
+    var paginationLabel = Model?.PaginationAriaLabel ?? "Phân trang hình ảnh";
+    var wrapInPanel = Model?.WrapInPanel ?? true;
+    var isActive = Model?.IsActive ?? true;
+    var panelClass = "gallery-detail-panel" + (isActive ? " active" : "");
+}
+
+@if (wrapInPanel)
+{
+    <div class="@panelClass" data-panel="@panelKey">
+        <div class="@gridClass" id="@gridId">
+            <div class="gallery-loading"><div class="spinner-border spinner-border-sm text-warning" role="status"></div></div>
+        </div>
+        <div class="gallery-album-pagination d-none" id="@paginationId" aria-label="@paginationLabel"></div>
+    </div>
+}
+else
+{
+    <div class="@gridClass" id="@gridId">
+        <div class="gallery-loading"><div class="spinner-border spinner-border-sm text-warning" role="status"></div></div>
+    </div>
+    <div class="gallery-album-pagination d-none" id="@paginationId" aria-label="@paginationLabel"></div>
+}

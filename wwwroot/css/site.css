@@ -1,0 +1,106 @@
+/* Bootstrap + legacy helpers — scoped to heritage theme */
+body.heritage-body {
+  margin: 0;
+}
+
+body.heritage-body .text-muted {
+  color: var(--heritage-muted) !important;
+}
+
+body.heritage-body .breadcrumb {
+  background: var(--heritage-cream);
+  border: 1px solid var(--heritage-border);
+  border-radius: 0;
+  padding: 10px 16px;
+}
+
+body.heritage-body .form-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--heritage-text);
+}
+
+body.heritage-body .card {
+  border: 1px solid var(--heritage-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.heritage-body .card-header {
+  background: var(--heritage-cream);
+  border-bottom: 1px solid var(--heritage-border);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+body.heritage-body .btn {
+  border-radius: 0;
+  font-weight: 600;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+body.heritage-body .btn-primary {
+  background-color: var(--heritage-navy);
+  border-color: var(--heritage-navy);
+  color: #fff;
+}
+
+body.heritage-body .btn-primary:hover,
+body.heritage-body .btn-primary:focus {
+  background-color: var(--heritage-blue);
+  border-color: var(--heritage-blue);
+  color: #fff;
+}
+
+body.heritage-body .btn-outline-primary {
+  color: var(--heritage-gold-dark);
+  border-color: var(--heritage-gold-dark);
+}
+
+body.heritage-body .btn-outline-primary:hover {
+  background-color: var(--heritage-gold-dark);
+  border-color: var(--heritage-gold-dark);
+  color: #fff;
+}
+
+body.heritage-body .btn-secondary {
+  background: var(--heritage-cream);
+  border-color: var(--heritage-border);
+  color: var(--heritage-text);
+}
+
+body.heritage-body .btn-outline-secondary {
+  border-color: var(--heritage-border);
+  color: var(--heritage-muted);
+}
+
+body.heritage-body .btn-outline-secondary.active,
+body.heritage-body .view-toggle .btn-xs.active {
+  background-color: var(--heritage-gold-dark) !important;
+  border-color: var(--heritage-gold-dark) !important;
+  color: #fff !important;
+}
+
+body.heritage-body .pagination .page-link {
+  border-radius: 0;
+  color: var(--heritage-navy);
+  border-color: var(--heritage-border);
+}
+
+body.heritage-body .pagination .page-item.active .page-link {
+  background-color: var(--heritage-navy);
+  border-color: var(--heritage-navy);
+}
+
+body.heritage-body .alert {
+  border-radius: 0;
+}
+
+body.heritage-body a:not(.heritage-btn-continue):not(.contact-map-btn):not(.contact-action-btn):not(.heritage-float-contact__btn):not(.gallery-album-card):not(.gallery-breadcrumb a):not(.heritage-hero-btn):not([class*="__cta"]):not([class*="__btn"]) {
+  color: var(--heritage-blue);
+}
+
+body.heritage-body .content-list .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 24, 45, 0.08);
+}

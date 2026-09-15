@@ -1,0 +1,10 @@
+/* Footer — heritage theme extends heritage-theme.css */
+.heritage-footer {
+  padding-top: 48px;
+}
+
+@media (min-width: 992px) {
+  .heritage-footer {
+    padding-top: 80px;
+  }
+}

@@ -1,0 +1,95 @@
+@{
+    var pageTitle = ViewData["Title"] as string ?? "Sự kiện";
+}
+
+<!-- S1: Events calendar + list -->
+<section class="events-section events-section--dark" id="eventsSection">
+    <div class="events-section__inner">
+        <div class="events-section__header">
+            <p class="events-section__label" data-i18n="eventsCalendarLabel">LỊCH SỰ KIỆN – LỄ HỘI</p>
+            <h1 class="events-section__title" data-i18n="eventsUpcomingTitle">Sự kiện sắp diễn ra</h1>
+            <p class="events-section__desc" data-i18n="eventsUpcomingDesc">Đừng bỏ lỡ những lễ hội truyền thống và sự kiện văn hóa đặc sắc của vùng đất di sản Đắk Lắk.</p>
+        </div>
+
+        <div class="events-layout">
+            <div class="events-calendar-wrap">
+                <div class="events-calendar" id="eventsCalendar">
+                    <div class="events-calendar__head">
+                        <button type="button" class="events-calendar__nav" id="eventsCalPrev" aria-label="Tháng trước">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <p class="events-calendar__month" id="eventsCalMonthLabel">—</p>
+                        <button type="button" class="events-calendar__nav" id="eventsCalNext" aria-label="Tháng sau">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="events-calendar__weekdays" id="eventsCalWeekdays"></div>
+                    <div class="events-calendar__days" id="eventsCalDays"></div>
+                    <div class="events-calendar__legend">
+                        <span class="events-calendar__legend-dot"></span>
+                        <span data-i18n="eventsHasEvent">Có sự kiện</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="events-list-wrap">
+                <div class="events-list" id="eventsList">
+                    <div class="events-loading">
+                        <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+                    </div>
+                </div>
+                <div class="events-pagination d-none" id="eventsPagination" aria-label="Phân trang sự kiện"></div>
+                <div class="events-list__footer d-none" id="eventsListFooter">
+                    <button type="button" class="events-btn-outline" id="eventsClearDayFilter" data-i18n="eventsShowAll">XEM TẤT CẢ LỊCH SỰ KIỆN →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- S2: Notifications -->
+<section class="events-section events-section--cream" id="notificationsSection">
+    <div class="events-section__inner">
+        <div class="events-notif-header">
+            <div>
+                <p class="events-notif-header__label" data-i18n="eventsNotifLabel">THÔNG BÁO QUAN TRỌNG</p>
+                <h2 class="events-notif-header__title" data-i18n="eventsNotifTitle">Thông tin cần biết</h2>
+            </div>
+            <button type="button" class="events-notif-header__btn d-none" id="notifViewAllTop" data-i18n="eventsNotifViewAll">XEM TẤT CẢ</button>
+        </div>
+
+        <div class="events-notif-layout">
+            <div class="events-notif-main">
+                <div id="notifFeatured">
+                    <div class="events-loading events-loading--light">
+                        <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                    </div>
+                </div>
+                <div class="events-notif-cards" id="notifCards"></div>
+            </div>
+
+            <aside class="events-notif-sidebar">
+                <div class="events-notif-sidebar__head">
+                    <h3 data-i18n="eventsNotifAllTitle">Tất cả thông báo</h3>
+                </div>
+                <div class="events-notif-sidebar__list" id="notifSidebarList">
+                    <div class="events-loading events-loading--light">
+                        <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                    </div>
+                </div>
+                <button type="button" class="events-notif-sidebar__more d-none" id="notifLoadMore" data-i18n="eventsNotifViewAllBtn">XEM TẤT CẢ THÔNG BÁO</button>
+            </aside>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        window.EVENTS_PAGE = {
+            initialPageTitle: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(pageTitle)),
+            eventBaseUrl: '/event/',
+            notificationBaseUrl: '/notification/'
+        };
+    </script>
+    <script src="~/js/events-page.js" asp-append-version="true"></script>
+}

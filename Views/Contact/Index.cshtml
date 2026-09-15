@@ -1,0 +1,144 @@
+@{
+    var pageTitle = ViewData["Title"] as string ?? "Liên hệ";
+}
+
+<!-- S2: Quick contact cards -->
+<section class="contact-quick-bar" aria-label="Liên hệ nhanh">
+    <div class="contact-quick-grid" id="contactQuickGrid">
+        <div class="contact-quick-card" data-quick-field="phone">
+            <div class="contact-icon-circle"><i class="bi bi-telephone-fill"></i></div>
+            <div>
+                <p class="contact-quick-card__title" data-i18n="contactQuickHotline">Hotline hỗ trợ</p>
+                <p class="contact-quick-card__info" id="contactQuickPhoneInfo"></p>
+            </div>
+        </div>
+        <div class="contact-quick-card" data-quick-field="email">
+            <div class="contact-icon-circle"><i class="bi bi-envelope-fill"></i></div>
+            <div>
+                <p class="contact-quick-card__title" data-i18n="contactQuickEmail">Email</p>
+                <p class="contact-quick-card__info" id="contactQuickEmailInfo"></p>
+            </div>
+        </div>
+        <div class="contact-quick-card" data-quick-field="address">
+            <div class="contact-icon-circle"><i class="bi bi-geo-alt-fill"></i></div>
+            <div>
+                <p class="contact-quick-card__title" data-i18n="contactQuickAddress">Địa chỉ</p>
+                <p class="contact-quick-card__info" id="contactQuickAddressInfo"></p>
+            </div>
+        </div>
+        <div class="contact-quick-card" data-quick-field="zalo">
+            <div class="contact-icon-circle"><i class="bi bi-chat-dots-fill"></i></div>
+            <div>
+                <p class="contact-quick-card__title" data-i18n="contactLabelZalo">Zalo OA</p>
+                <p class="contact-quick-card__info" id="contactQuickZaloInfo"></p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- S3: Form + sidebar -->
+<section class="contact-form-section">
+    <div class="contact-form-layout">
+        <div>
+            <div class="contact-form-intro">
+                <div id="pageMenuLabel"></div>
+                <h2 class="contact-form-heading" data-i18n="contactFormHeading">Chúng tôi lắng nghe bạn</h2>
+                <p class="contact-form-desc" data-i18n="contactFormDesc">Điền form dưới đây để gửi yêu cầu, thắc mắc hoặc đăng ký dịch vụ. Chúng tôi sẽ liên hệ lại sớm nhất có thể.</p>
+            </div>
+
+            <div id="contactAlert" class="alert contact-alert d-none" role="alert">
+                <span id="contactAlertMessage"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <form id="contactForm" class="contact-form-box" novalidate>
+                <div class="contact-field-row contact-field-row--2">
+                    <div class="contact-field">
+                        <label class="contact-field-label" for="name" id="contactNameLabel"></label>
+                        <input type="text" class="contact-input" id="name" name="name" required />
+                    </div>
+                    <div class="contact-field">
+                        <label class="contact-field-label" for="email" id="contactEmailLabel"></label>
+                        <input type="email" class="contact-input" id="email" name="email" required />
+                    </div>
+                </div>
+
+                <div class="contact-field-row contact-field-row--2">
+                    <div class="contact-field">
+                        <label class="contact-field-label" for="phone" id="contactPhoneLabel"></label>
+                        <input type="tel" class="contact-input" id="phone" name="phone" />
+                    </div>
+                    <div class="contact-field">
+                        <label class="contact-field-label" for="subject" id="contactSubjectLabel"></label>
+                        <input type="text" class="contact-input" id="subject" name="subject" required />
+                    </div>
+                </div>
+
+                <div class="contact-field">
+                    <label class="contact-field-label" for="message" id="contactMessageLabel"></label>
+                    <textarea class="contact-textarea" id="message" name="message" required></textarea>
+                </div>
+
+                <div class="contact-field">
+                    <label class="contact-field-label" id="contactSecurityLabel"></label>
+                    <div class="contact-captcha-box">
+                        <div class="contact-captcha-question">
+                            <span id="captchaQuestion"></span>
+                            <button type="button" id="refreshCaptcha" class="btn btn-sm btn-outline-secondary" title="">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                        <input type="text" class="contact-input mt-2" id="captchaAnswer" name="captchaAnswer" required style="max-width:200px;" />
+                        <div id="captchaError" class="text-danger d-none mt-1 small"></div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="contact-submit-btn">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    <i class="bi bi-send"></i>
+                    <span class="btn-text" id="submitBtnText"></span>
+                </button>
+                <p class="contact-secure-note">
+                    <i class="bi bi-lock-fill"></i>
+                    <span data-i18n="contactSecureNote">Thông tin của bạn được bảo mật hoàn toàn</span>
+                </p>
+            </form>
+        </div>
+
+        <aside class="contact-sidebar">
+            @await Html.PartialAsync("_ContactInfoBox")
+            @await Html.PartialAsync("_ContactActionsBox")
+        </aside>
+    </div>
+</section>
+
+@{
+    ViewData["MapSectionId"] = "contact-map-section";
+}
+@await Html.PartialAsync("_SiteMapSection")
+
+<!-- S6: FAQ -->
+<section class="contact-faq-section">
+    <div class="heritage-section-inner contact-faq-inner">
+        <p class="contact-section-label contact-section-label--light" data-i18n="contactFaqLabel">Câu hỏi thường gặp</p>
+        <h2 class="contact-faq-heading" data-i18n="contactFaqHeading">Giải đáp nhanh</h2>
+        <div id="contactFaqList">
+            <div class="contact-faq-loading text-center py-4">
+                <div class="spinner-border spinner-border-sm text-warning" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        window.CONTACT_PAGE = {
+            initialPageTitle: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(pageTitle)),
+            submitUrl: '@Url.Action("Submit", "Contact")'
+        };
+    </script>
+    <script src="~/js/contact-sidebar.js" asp-append-version="true"></script>
+    <script src="~/js/contact.js" asp-append-version="true"></script>
+}

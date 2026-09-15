@@ -1,0 +1,392 @@
+<!-- Notifications Modal -->
+<div class="modal fade" id="notificationsModal" tabindex="-1" aria-labelledby="notificationsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationsModalLabel" data-translate="notifications">Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="notificationsContainer" class="notifications-container">
+                    <!-- Loading state -->
+                    <div id="notificationsLoading" class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Empty state -->
+                    <div id="notificationsEmpty" class="text-center p-4 d-none">
+                        <p class="text-muted" data-translate="noNotifications">Không có thông báo nào</p>
+                    </div>
+                    
+                    <!-- Single notification view -->
+                    <div id="notificationsSingle" class="d-none">
+                        <div class="notification-content p-4">
+                            <div id="singleNotificationContent"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Multiple notifications view -->
+                    <div id="notificationsMultiple" class="d-none">
+                        <div class="row g-0 h-100">
+                            <!-- Left column: Notification list -->
+                            <div class="col-md-4 border-end">
+                                <div class="notification-list p-2" style="max-height: 500px; overflow-y: auto;">
+                                    <div id="notificationListItems"></div>
+                                </div>
+                            </div>
+                            <!-- Right column: Notification content -->
+                            <div class="col-md-8">
+                                <div class="notification-content p-4" style="max-height: 500px; overflow-y: auto;">
+                                    <div id="notificationContent"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="close">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    (function() {
+        let notificationsData = [];
+        // Get current language from localStorage or default to 'vi'
+        let currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+
+        function onlyPublished(items) {
+            return (items || []).filter(item => {
+                if (!item) return false;
+                if ('published' in item) return item.published === true;
+                if ('Published' in item) return item.Published === true;
+                return false;
+            });
+        }
+        
+        // Translations object
+        let translations = {};
+        let defaultLang = 'vi';
+        
+        // Load translations from page.json
+        async function loadTranslations() {
+            try {
+                const response = await fetch('/locales/page.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    defaultLang = data.default || 'vi';
+                    translations = data;
+                }
+            } catch (error) {
+                // Silently fail
+            }
+        }
+        
+        // Get translation text
+        function t(key) {
+            if (!key) return '';
+            const lang = currentLang || defaultLang;
+            // Try current language first
+            if (translations[lang] && translations[lang][key]) {
+                return translations[lang][key];
+            }
+            // Fallback to default language
+            if (translations[defaultLang] && translations[defaultLang][key]) {
+                return translations[defaultLang][key];
+            }
+            // Last resort: return key itself
+            return key;
+        }
+        
+        // Update translations in DOM elements with data-translate attribute
+        function updateTranslationsInDOM() {
+            // First, specifically update notificationsModalLabel (force update)
+            const modalLabel = document.getElementById('notificationsModalLabel');
+            if (modalLabel) {
+                const key = modalLabel.getAttribute('data-translate');
+                if (key) {
+                    const translatedText = t(key);
+                    if (translatedText) {
+                        modalLabel.textContent = translatedText;
+                    }
+                }
+            }
+            
+            // Then update all other elements with data-translate attribute
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                // Skip notificationsModalLabel as we already updated it
+                if (el.id === 'notificationsModalLabel') {
+                    return;
+                }
+                const key = el.getAttribute('data-translate');
+                if (key) {
+                    const translatedText = t(key);
+                    if (translatedText) {
+                        el.textContent = translatedText;
+                    }
+                }
+            });
+        }
+        
+        // Load notifications
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/Portal/notifications?pageNumber=1&pageSize=100');
+                if (!response.ok) {
+                    return;
+                }
+                
+                const result = await response.json();
+                if (!result || !result.items || !Array.isArray(result.items) || result.items.length === 0) {
+                    return;
+                }
+                
+                notificationsData = onlyPublished(result.items);
+                await showNotifications();
+            } catch (error) {
+                // Silently fail
+            }
+        }
+        
+        // Show notifications modal
+        async function showNotifications() {
+            if (notificationsData.length === 0) {
+                return;
+            }
+            
+            // Ensure translations are loaded before showing modal
+            if (Object.keys(translations).length === 0) {
+                await loadTranslations();
+            }
+            
+            renderNotifications();
+            
+            // Show modal after rendering
+            const modalElement = document.getElementById('notificationsModal');
+            if (modalElement && typeof bootstrap !== 'undefined') {
+                const modal = new bootstrap.Modal(modalElement);
+                
+                // Update translations before showing modal (in case element is already in DOM)
+                updateTranslationsInDOM();
+                
+                // Show modal first
+                modal.show();
+                
+                // Update translations after modal is shown (ensure element exists in DOM)
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    // Force update translations immediately
+                    updateTranslationsInDOM();
+                    
+                    // Also update after a short delay to ensure DOM is fully ready
+                    setTimeout(() => {
+                        updateTranslationsInDOM();
+                    }, 50);
+                }, { once: true });
+            }
+        }
+        
+        // Render notifications
+        function renderNotifications() {
+            const loadingEl = document.getElementById('notificationsLoading');
+            const emptyEl = document.getElementById('notificationsEmpty');
+            const singleEl = document.getElementById('notificationsSingle');
+            const multipleEl = document.getElementById('notificationsMultiple');
+            
+            loadingEl.classList.add('d-none');
+            
+            if (notificationsData.length === 0) {
+                emptyEl.classList.remove('d-none');
+                singleEl.classList.add('d-none');
+                multipleEl.classList.add('d-none');
+                return;
+            }
+            
+            if (notificationsData.length === 1) {
+                // Single notification: hide list, show content only
+                emptyEl.classList.add('d-none');
+                singleEl.classList.remove('d-none');
+                multipleEl.classList.add('d-none');
+                renderSingleNotification(notificationsData[0]);
+            } else {
+                // Multiple notifications: show list and content
+                emptyEl.classList.add('d-none');
+                singleEl.classList.add('d-none');
+                multipleEl.classList.remove('d-none');
+                renderMultipleNotifications();
+            }
+        }
+        
+        // Render single notification
+        function renderSingleNotification(notification) {
+            const container = document.getElementById('singleNotificationContent');
+            const translation = getNotificationTranslation(notification, currentLang);
+            
+            if (!translation) return;
+            
+            let html = '';
+            if (notification.image || notification.Image) {
+                html += `<img src="${escapeHtml(notification.image || notification.Image)}" alt="${escapeHtml(translation.title || translation.Title || '')}" class="notification-content-image">`;
+            }
+            html += `<h3 class="notification-content-title">${escapeHtml(translation.title || translation.Title || '')}</h3>`;
+            html += `<div class="notification-content-body">${translation.content || translation.Content || ''}</div>`;
+            
+            container.innerHTML = html;
+        }
+        
+        // Render multiple notifications
+        function renderMultipleNotifications() {
+            const listContainer = document.getElementById('notificationListItems');
+            const contentContainer = document.getElementById('notificationContent');
+            
+            // Render list
+            let listHtml = '';
+            notificationsData.forEach((notification, index) => {
+                const translation = getNotificationTranslation(notification, currentLang);
+                if (!translation) return;
+                
+                const title = translation.title || translation.Title || '';
+                const date = notification.dateAdd || notification.DateAdd || '';
+                const dateStr = date ? new Date(date).toLocaleDateString(currentLang) : '';
+                
+                listHtml += `
+                    <div class="notification-list-item ${index === 0 ? 'active' : ''}" data-index="${index}" onclick="selectNotification(${index})">
+                        <div class="notification-list-item-title">${escapeHtml(title)}</div>
+                        ${dateStr ? `<div class="notification-list-item-date">${escapeHtml(dateStr)}</div>` : ''}
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = listHtml;
+            
+            // Render first notification content
+            if (notificationsData.length > 0) {
+                renderNotificationContent(notificationsData[0]);
+            }
+        }
+        
+        // Select notification
+        window.selectNotification = function(index) {
+            // Update active state
+            document.querySelectorAll('.notification-list-item').forEach((el, i) => {
+                if (i === index) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+            
+            // Render content
+            renderNotificationContent(notificationsData[index]);
+        };
+        
+        // Render notification content
+        function renderNotificationContent(notification) {
+            const container = document.getElementById('notificationContent');
+            const translation = getNotificationTranslation(notification, currentLang);
+            
+            if (!translation) return;
+            
+            let html = '';
+            if (notification.image || notification.Image) {
+                html += `<img src="${escapeHtml(notification.image || notification.Image)}" alt="${escapeHtml(translation.title || translation.Title || '')}" class="notification-content-image">`;
+            }
+            html += `<h3 class="notification-content-title">${escapeHtml(translation.title || translation.Title || '')}</h3>`;
+            html += `<div class="notification-content-body">${translation.content || translation.Content || ''}</div>`;
+            
+            container.innerHTML = html;
+        }
+        
+        // Get notification translation
+        function getNotificationTranslation(notification, lang) {
+            const translations = notification.translations || notification.Translations || [];
+            
+            // Exact match
+            let translation = translations.find(t => 
+                (t.languageCode || t.LanguageCode || '').toLowerCase() === lang.toLowerCase()
+            );
+            
+            // Prefix match
+            if (!translation) {
+                translation = translations.find(t => {
+                    const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                    const langLower = lang.toLowerCase();
+                    return tLang === langLower || tLang.substring(0, 2) === langLower.substring(0, 2);
+                });
+            }
+            
+            // Fallback to first
+            if (!translation && translations.length > 0) {
+                translation = translations[0];
+            }
+            
+            return translation;
+        }
+        
+        // Escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Listen for language change
+        window.addEventListener('languageChanged', async function(event) {
+            const newLang = event.detail?.langCode || localStorage.getItem('selectedLanguage') || 'vi';
+            currentLang = newLang;
+            localStorage.setItem('selectedLanguage', newLang);
+            
+            // Reload translations
+            await loadTranslations();
+            
+            // Update translations in DOM (title, buttons, etc.)
+            updateTranslationsInDOM();
+            
+            // Update notifications if modal is open or if we have data
+            if (notificationsData.length > 0) {
+                // Check if modal is currently open
+                const modalElement = document.getElementById('notificationsModal');
+                const isModalOpen = modalElement && modalElement.classList.contains('show');
+                
+                // Re-render notifications with new language
+                renderNotifications();
+                
+                // If modal was open, keep it open (it will already be open, just update content)
+                // No need to show again as it's already visible
+            }
+        });
+        
+        // Update currentLang from localStorage on init
+        function updateCurrentLang() {
+            currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+        }
+        
+        // Load notifications when DOM is ready and show modal if there are notifications
+        async function initNotifications() {
+            // Update currentLang from localStorage
+            updateCurrentLang();
+            
+            // Load translations first
+            await loadTranslations();
+            
+            // Update translations in DOM
+            updateTranslationsInDOM();
+            
+            // Then load notifications
+            loadNotifications().then(() => {
+                // Modal will be shown automatically in showNotifications() if there are notifications
+            });
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initNotifications);
+        } else {
+            initNotifications();
+        }
+    })();
+</script>
+

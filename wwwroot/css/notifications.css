@@ -1,0 +1,43 @@
+.notification-list-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--heritage-border);
+    transition: background-color 0.2s;
+}
+
+.notification-list-item:hover {
+    background-color: var(--heritage-cream);
+}
+
+.notification-list-item.active {
+    background-color: rgba(155, 115, 52, 0.08);
+    border-left: 3px solid var(--heritage-gold-dark);
+}
+
+.notification-list-item-title {
+    font-weight: 600;
+    color: var(--heritage-text);
+    margin-bottom: 4px;
+}
+
+.notification-list-item-date {
+    font-size: 12px;
+    color: var(--heritage-muted);
+}
+
+.notification-content-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--heritage-text);
+}
+
+.notification-content-body {
+    color: var(--heritage-muted);
+    line-height: 1.6;
+}
+
+.notifications-container {
+    min-height: 200px;
+}

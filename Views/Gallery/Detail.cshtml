@@ -1,0 +1,112 @@
+@{
+    var pageTitle = ViewData["Title"] as string ?? "Album";
+    var albumCode = ViewData["AlbumCode"] as string ?? "";
+}
+
+<section class="gallery-detail-hero">
+    <div class="heritage-section-inner">
+        <nav class="gallery-breadcrumb" aria-label="Breadcrumb">
+            <a href="@Url.Action("Index", "Gallery")">Thư viện</a>
+            <i class="bi bi-chevron-right"></i>
+            <span id="galleryDetailBreadcrumb">@albumCode</span>
+        </nav>
+        <h1 class="gallery-detail__title" id="galleryDetailTitle">@pageTitle</h1>
+        <p class="gallery-detail__desc" id="galleryDetailDesc"></p>
+    </div>
+</section>
+
+<section class="gallery-section gallery-section--white">
+    <div class="heritage-section-inner">
+        <div class="gallery-detail-tabs" id="galleryDetailTabs" role="tablist">
+            <button type="button" class="gallery-detail-tab active" data-tab="image">Hình ảnh</button>
+            <button type="button" class="gallery-detail-tab" data-tab="video">Video</button>
+            <button type="button" class="gallery-detail-tab" data-tab="file3d">3D</button>
+        </div>
+
+        @await Html.PartialAsync("_GalleryImageViewer", new GalleryMediaViewerViewModel
+        {
+            GridId = "galleryDetailImages",
+            PaginationId = "galleryDetailImagesPagination",
+            PanelKey = "image",
+            GridClass = "gallery-media-grid",
+            PaginationAriaLabel = "Phân trang hình ảnh",
+            WrapInPanel = true,
+            IsActive = true
+        })
+
+        @await Html.PartialAsync("_GalleryVideoViewer", new GalleryMediaViewerViewModel
+        {
+            GridId = "galleryDetailVideos",
+            PaginationId = "galleryDetailVideosPagination",
+            PanelKey = "video",
+            GridClass = "gallery-video-grid",
+            PaginationAriaLabel = "Phân trang video",
+            WrapInPanel = true,
+            IsActive = false
+        })
+
+        @await Html.PartialAsync("_Gallery3dViewer", new GalleryMediaViewerViewModel
+        {
+            GridId = "galleryDetail3d",
+            PaginationId = "galleryDetail3dPagination",
+            PanelKey = "file3d",
+            GridClass = "gallery-3d-grid",
+            PaginationAriaLabel = "Phân trang mô hình 3D",
+            WrapInPanel = true,
+            IsActive = false
+        })
+
+        <div class="gallery-detail-related d-none" id="galleryRelatedWrap">
+            @await Html.PartialAsync("_GalleryAlbumImageSection", new GalleryAlbumSectionViewModel
+            {
+                SectionId = "galleryRelatedImageSection",
+                GridId = "galleryRelatedImageAlbums",
+                PaginationId = "galleryRelatedImagePagination",
+                SectionLabel = "ALBUM ẢNH LIÊN QUAN",
+                PaginationAriaLabel = "Phân trang album ảnh liên quan",
+                MediaType = "image",
+                IsRelated = true
+            })
+
+            @await Html.PartialAsync("_GalleryAlbumVideoSection", new GalleryAlbumSectionViewModel
+            {
+                SectionId = "galleryRelatedVideoSection",
+                GridId = "galleryRelatedVideoAlbums",
+                PaginationId = "galleryRelatedVideoPagination",
+                SectionLabel = "ALBUM VIDEO LIÊN QUAN",
+                PaginationAriaLabel = "Phân trang album video liên quan",
+                MediaType = "video",
+                IsRelated = true
+            })
+
+            @await Html.PartialAsync("_GalleryAlbum3dSection", new GalleryAlbumSectionViewModel
+            {
+                SectionId = "galleryRelated3dSection",
+                GridId = "galleryRelated3dAlbums",
+                PaginationId = "galleryRelated3dPagination",
+                SectionLabel = "ALBUM 3D LIÊN QUAN",
+                PaginationAriaLabel = "Phân trang album 3D liên quan",
+                MediaType = "file3d",
+                IsRelated = true
+            })
+        </div>
+    </div>
+</section>
+
+@await Html.PartialAsync("_GalleryModals")
+
+@section Scripts {
+    <script>
+        window.GALLERY_PAGE = {
+            mode: 'detail',
+            albumCode: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(albumCode)),
+            initialPageTitle: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(pageTitle)),
+            galleryBaseUrl: '@Url.Action("Index", "Gallery")',
+            imageAutoplay: true,
+            imageAutoplayInterval: 4000,
+            detailPageSize: 12
+        };
+    </script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    <script src="~/js/gallery.js" asp-append-version="true"></script>
+}

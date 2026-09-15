@@ -1,0 +1,110 @@
+/* Slider — heritage hero overrides (base in heritage-theme.css) */
+#mainSlider.heritage-hero {
+  margin-bottom: 0;
+}
+
+.heritage-hero #sliderContent {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.heritage-hero #sliderContent .carousel-inner {
+  height: 100%;
+}
+
+.heritage-hero .slider-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  background: linear-gradient(135deg, var(--heritage-navy) 0%, var(--heritage-blue) 100%) !important;
+}
+
+.slider-1 {
+  background: linear-gradient(135deg, var(--heritage-navy) 0%, var(--heritage-blue) 100%);
+}
+
+.slider-2 {
+  background: linear-gradient(135deg, var(--heritage-blue) 0%, #063a6e 100%);
+}
+
+.slider-3 {
+  background: linear-gradient(135deg, var(--heritage-gold-dark) 0%, var(--heritage-navy) 100%);
+}
+
+/* Hero CTA buttons — up to 5 */
+.heritage-hero-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 28px;
+  width: 100%;
+}
+
+@media (min-width: 576px) {
+  .heritage-hero-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+.heritage-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 58px;
+  min-width: 215px;
+  max-width: 100%;
+  padding: 0 24px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  border: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.heritage-hero-btn--primary {
+  width: 245px;
+  background: #0a4d8c;
+  color: #fff !important;
+}
+
+.heritage-hero-btn--primary:hover,
+.heritage-hero-btn--primary:focus {
+  background: #0d5fa8;
+  color: #fff !important;
+}
+
+.heritage-hero-btn--outline {
+  width: 215px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff !important;
+}
+
+.heritage-hero-btn--outline:hover,
+.heritage-hero-btn--outline:focus {
+  border-color: #fff;
+  color: #fff !important;
+}
+
+@media (max-width: 575px) {
+  .heritage-hero-btn,
+  .heritage-hero-btn--primary,
+  .heritage-hero-btn--outline {
+    width: 100%;
+    max-width: 320px;
+  }
+}

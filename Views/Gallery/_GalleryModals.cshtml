@@ -1,0 +1,49 @@
+<!-- Image lightbox -->
+<div class="gallery-lightbox d-none" id="galleryLightbox" role="dialog" aria-modal="true" aria-label="Xem ảnh">
+    <button type="button" class="gallery-lightbox__close" id="galleryLightboxClose" aria-label="Đóng">
+        <i class="bi bi-x-lg"></i>
+    </button>
+    <button type="button" class="gallery-lightbox__autoplay is-playing" id="galleryLightboxAutoplay" aria-label="Tạm dừng trình chiếu" aria-pressed="true">
+        <i class="bi bi-pause-fill" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="gallery-lightbox__nav gallery-lightbox__nav--prev" id="galleryLightboxPrev" aria-label="Ảnh trước">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <button type="button" class="gallery-lightbox__nav gallery-lightbox__nav--next" id="galleryLightboxNext" aria-label="Ảnh sau">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+    <div class="gallery-lightbox__stage">
+        <img src="" alt="" id="galleryLightboxImg" />
+        <div class="gallery-lightbox__meta">
+            <span class="gallery-lightbox__counter" id="galleryLightboxCounter" aria-live="polite"></span>
+            <div class="gallery-lightbox__caption" id="galleryLightboxCaption"></div>
+        </div>
+    </div>
+    <div class="gallery-lightbox__progress d-none" id="galleryLightboxProgress" aria-hidden="true">
+        <div class="gallery-lightbox__progress-bar" id="galleryLightboxProgressBar"></div>
+    </div>
+</div>
+
+<!-- Video modal -->
+<div class="gallery-modal d-none" id="galleryVideoModal" role="dialog" aria-modal="true" aria-label="Xem video">
+    <div class="gallery-modal__backdrop" data-gallery-close="video"></div>
+    <div class="gallery-modal__panel gallery-modal__panel--video">
+        <button type="button" class="gallery-modal__close" data-gallery-close="video" aria-label="Đóng">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="gallery-modal__body" id="galleryVideoBody"></div>
+        <div class="gallery-modal__caption" id="galleryVideoCaption"></div>
+    </div>
+</div>
+
+<!-- 3D modal -->
+<div class="gallery-modal d-none" id="gallery3dModal" role="dialog" aria-modal="true" aria-label="Xem mô hình 3D">
+    <div class="gallery-modal__backdrop" data-gallery-close="3d"></div>
+    <div class="gallery-modal__panel gallery-modal__panel--3d">
+        <button type="button" class="gallery-modal__close" data-gallery-close="3d" aria-label="Đóng">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="gallery-modal__body" id="gallery3dBody"></div>
+        <p class="gallery-modal__caption" id="gallery3dCaption"></p>
+    </div>
+</div>

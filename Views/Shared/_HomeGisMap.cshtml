@@ -1,0 +1,55 @@
+<section class="home-gis-map d-none" id="homeGisMapSection" aria-label="Bản đồ khám phá">
+    <div class="home-gis-map__inner">
+        <h2 class="home-gallery__title" id="homeGisMapTitle" data-i18n="homeGisMapTitle">BẢN ĐỒ KHÁM PHÁ</h2>
+        <div class="home-gis-map__board">
+            <div class="home-gis-map__map-wrap" id="homeGisMapWrap">
+                <div id="homeGisMapCanvas" class="home-gis-map__canvas" role="region" aria-label="OpenStreetMap"></div>
+                <div class="home-gis-map__basemap" role="group" aria-label="Kiểu bản đồ" data-i18n-aria-label="homeGisMapBasemapGroup">
+                    <button type="button" class="home-gis-map__basemap-btn is-active" data-basemap="street" aria-pressed="true" aria-label="Đường phố" data-i18n-aria-label="homeGisMapStreet">
+                        <i class="bi bi-map" aria-hidden="true"></i>
+                        <span class="home-gis-map__basemap-label" data-i18n="homeGisMapStreet">Đường phố</span>
+                    </button>
+                    <button type="button" class="home-gis-map__basemap-btn" data-basemap="satellite" aria-pressed="false" aria-label="Vệ tinh" data-i18n-aria-label="homeGisMapSatellite">
+                        <i class="bi bi-globe-americas" aria-hidden="true"></i>
+                        <span class="home-gis-map__basemap-label" data-i18n="homeGisMapSatellite">Vệ tinh</span>
+                    </button>
+                    <button type="button" class="home-gis-map__basemap-btn" data-basemap="hybrid" aria-pressed="false" aria-label="Hỗn hợp" data-i18n-aria-label="homeGisMapHybrid">
+                        <i class="bi bi-layers" aria-hidden="true"></i>
+                        <span class="home-gis-map__basemap-label" data-i18n="homeGisMapHybrid">Hỗn hợp</span>
+                    </button>
+                    <button type="button" class="home-gis-map__basemap-btn" data-basemap="terrain" aria-pressed="false" aria-label="Địa hình" data-i18n-aria-label="homeGisMapTerrain">
+                        <i class="bi bi-triangle" aria-hidden="true"></i>
+                        <span class="home-gis-map__basemap-label" data-i18n="homeGisMapTerrain">Địa hình</span>
+                    </button>
+                    <button type="button" class="home-gis-map__basemap-btn" data-basemap="light" aria-pressed="false" aria-label="Sáng" data-i18n-aria-label="homeGisMapLight">
+                        <i class="bi bi-brightness-high" aria-hidden="true"></i>
+                        <span class="home-gis-map__basemap-label" data-i18n="homeGisMapLight">Sáng</span>
+                    </button>
+                </div>
+            </div>
+            <aside class="home-gis-map__panel" aria-label="Danh sách địa điểm">
+                <div class="home-gis-map__search">
+                    <i class="bi bi-geo-alt home-gis-map__search-icon" aria-hidden="true"></i>
+                    <input
+                        type="search"
+                        id="homeGisMapSearch"
+                        class="home-gis-map__search-input"
+                        data-i18n-placeholder="homeGisMapSearchPlaceholder"
+                        placeholder="Tìm địa điểm..."
+                        autocomplete="off">
+                </div>
+                <div class="home-gis-map__filters">
+                    <label class="home-gis-map__filter home-gis-map__filter--full">
+                        <span class="home-gis-map__filter-label" data-i18n="homeGisMapCategory">Danh mục</span>
+                        <select id="homeGisMapCategory" class="home-gis-map__filter-select">
+                            <option value="" data-i18n="homeGisMapAll">Tất cả</option>
+                        </select>
+                    </label>
+                </div>
+                <ul class="home-gis-map__list" id="homeGisMapList"></ul>
+            </aside>
+        </div>
+    </div>
+</section>
+
+<script src="~/js/home-gis-map.js" asp-append-version="true"></script>

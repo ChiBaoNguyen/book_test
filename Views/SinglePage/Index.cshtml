@@ -1,0 +1,232 @@
+@{
+    var singlePost = ViewBag.SinglePost as CreativeWeb.Controllers.SinglePostDto;
+    // Get language from query string or cookie
+    var currentLang = Context.Request.Query["lang"].ToString();
+    if (string.IsNullOrWhiteSpace(currentLang))
+    {
+        currentLang = Context.Request.Cookies["selectedLanguage"] ?? "vi"; // Default language
+    }
+    
+    // Find translation by current language (case-insensitive)
+    // Try exact match first, then try 2-character prefix match, then fallback to first available
+    var translation = singlePost?.Translations?.FirstOrDefault(t => 
+            !string.IsNullOrWhiteSpace(t.LanguageCode) && 
+            t.LanguageCode.Equals(currentLang, StringComparison.OrdinalIgnoreCase))
+        ?? singlePost?.Translations?.FirstOrDefault(t => 
+            !string.IsNullOrWhiteSpace(t.LanguageCode) && 
+            t.LanguageCode.Length >= 2 && 
+            currentLang.Length >= 2 &&
+            t.LanguageCode.Substring(0, 2).Equals(currentLang.Substring(0, 2), StringComparison.OrdinalIgnoreCase))
+        ?? singlePost?.Translations?.FirstOrDefault();
+    
+    // Debug logging
+    if (singlePost != null)
+    {
+        System.Diagnostics.Debug.WriteLine($"[SinglePage View] Current Lang: {currentLang}");
+        System.Diagnostics.Debug.WriteLine($"[SinglePage View] Total Translations: {singlePost.Translations?.Count ?? 0}");
+        if (singlePost.Translations != null)
+        {
+            foreach (var t in singlePost.Translations)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SinglePage View] Translation Lang: {t.LanguageCode}, Title: {t.Title}");
+            }
+        }
+        System.Diagnostics.Debug.WriteLine($"[SinglePage View] Selected Translation Lang: {translation?.LanguageCode}, Title: {translation?.Title}");
+    }
+    
+    ViewData["Title"] = translation?.Title ?? "Trang đơn";
+    var pageTitle = translation?.Title ?? "Trang đơn";
+    var pageDescription = translation?.Description ?? "";
+    var pageContent = translation?.Content ?? "";
+}
+
+<div class="heritage-detail-wrap">
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="single-page-content">
+                @if (!string.IsNullOrWhiteSpace(pageTitle))
+                {
+                    <h1 class="mb-4" id="pageTitle">@pageTitle</h1>
+                }
+                
+                @if (!string.IsNullOrWhiteSpace(pageDescription))
+                {
+                    <div class="page-description mb-4" id="pageDescription">
+                        @Html.Raw(pageDescription)
+                    </div>
+                }
+                
+                @if (!string.IsNullOrWhiteSpace(pageContent))
+                {
+                    <div class="content-body" id="pageContent">
+                        @Html.Raw(pageContent)
+                    </div>
+                }
+                else
+                {
+                    <div class="content-body" id="pageContent">
+                        <p class="text-muted" id="contentUpdatingText">Nội dung đang được cập nhật...</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<script>
+    // Store single post data with all translations
+    // Use JsonSerializerOptions with UnsafeRelaxedJsonEscaping to preserve HTML
+    @{
+        var jsonOptions = new System.Text.Json.JsonSerializerOptions
+        {
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+    }
+    const singlePostData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+        Id = singlePost?.Id,
+        Translations = singlePost?.Translations
+    }, jsonOptions));
+    
+    // Language translations
+    let pageTranslations = {};
+    let pageDefaultLang = 'vi';
+    
+    // Load translations
+    async function loadPageTranslations() {
+        try {
+            const response = await fetch('/locales/page.json');
+            if (response.ok) {
+                const data = await response.json();
+                pageDefaultLang = data.default || 'vi';
+                pageTranslations = data;
+            }
+        } catch (error) {
+            // Error loading page translations
+        }
+    }
+    
+    // Get translation by key
+    function t(key) {
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+        if (langCode && pageTranslations[langCode]) {
+            return pageTranslations[langCode][key] || pageTranslations[pageDefaultLang]?.[key] || key;
+        }
+        return pageTranslations[pageDefaultLang]?.[key] || key;
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get current language from localStorage
+        const currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+        
+        // Load translations first
+        await loadPageTranslations();
+        
+        // Update single page content based on current language from localStorage
+        updateSinglePageLanguage(currentLang);
+        
+        // Update content updating text on initial load
+        const updatingTextEl = document.getElementById('contentUpdatingText');
+        if (updatingTextEl) {
+            updatingTextEl.textContent = t('contentUpdating');
+        }
+        
+        // Listen for language change events
+        window.addEventListener('languageChanged', async function(event) {
+            const newLang = event.detail?.langCode || 'vi';
+            
+            // Reload translations
+            await loadPageTranslations();
+            
+            // Update single page content without reload
+            updateSinglePageLanguage(newLang);
+        });
+    });
+    
+    // Update single page content based on selected language
+    function updateSinglePageLanguage(langCode) {
+        // Check both PascalCase and camelCase for Translations
+        const translations = singlePostData?.Translations || singlePostData?.translations || [];
+        
+        if (!singlePostData || !translations || translations.length === 0) {
+            return;
+        }
+        
+        // Find translation matching current language
+        let translation = null;
+        
+        // First try exact match (check both PascalCase and camelCase)
+        translation = translations.find(t => {
+            const lang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+            return lang === langCode.toLowerCase();
+        });
+        
+        // If no exact match, try language code prefix
+        if (!translation) {
+            translation = translations.find(t => {
+                const tLang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+                const currentLang = langCode.toLowerCase();
+                return tLang === currentLang || 
+                       tLang.substring(0, 2) === currentLang.substring(0, 2);
+            });
+        }
+        
+        // Fallback to first translation
+        if (!translation && translations.length > 0) {
+            translation = translations[0];
+        }
+        
+        if (!translation) {
+            return;
+        }
+        
+        // Get translation properties (check both PascalCase and camelCase)
+        const title = translation.Title || translation.title || 'Trang đơn';
+        const description = translation.Description || translation.description || '';
+        const content = translation.Content || translation.content || '';
+        
+        // Update page title
+        if (document.title) {
+            document.title = title + ' - ' + (document.title.split(' - ')[1] || '');
+        }
+        
+        // Update page title
+        const titleEl = document.getElementById('pageTitle');
+        if (titleEl) {
+            titleEl.textContent = title;
+        }
+        
+        // Update page description
+        const descEl = document.getElementById('pageDescription');
+        if (descEl) {
+            if (description) {
+                descEl.innerHTML = description;
+                descEl.style.display = '';
+            } else {
+                descEl.style.display = 'none';
+            }
+        }
+        
+        // Update page content
+        const contentEl = document.getElementById('pageContent');
+        if (contentEl) {
+            if (content && content.trim()) {
+                // Use innerHTML to render HTML content from editor
+                contentEl.innerHTML = content;
+            } else {
+                const updatingText = t('contentUpdating');
+                contentEl.innerHTML = `<p class="text-muted">${updatingText}</p>`;
+            }
+        }
+        
+        // Update content updating text if exists
+        const updatingTextEl = document.getElementById('contentUpdatingText');
+        if (updatingTextEl) {
+            updatingTextEl.textContent = t('contentUpdating');
+        }
+    }
+</script>
+

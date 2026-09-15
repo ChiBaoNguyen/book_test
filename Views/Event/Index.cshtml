@@ -1,0 +1,647 @@
+@{
+    var eventEntity = ViewBag.Event as CreativeWeb.Controllers.EventDto;
+    var pageSlug = ViewBag.PageSlug as string ?? "";
+    // Get language from query string or cookie
+    var currentLang = Context.Request.Query["lang"].ToString();
+    if (string.IsNullOrWhiteSpace(currentLang))
+    {
+        currentLang = Context.Request.Cookies["selectedLanguage"] ?? "vi";
+    }
+    
+    var translation = eventEntity?.Translations?.FirstOrDefault(t => t.LanguageCode == currentLang)
+        ?? eventEntity?.Translations?.FirstOrDefault();
+    
+    ViewData["Title"] = translation?.Title ?? "Sự kiện";
+    var eventTitle = translation?.Title ?? "Sự kiện";
+    var eventSummary = translation?.Summary ?? "";
+    // Try Content first, then Description as fallback
+    var eventContent = translation?.Content ?? translation?.Description ?? "";
+    var eventImage = eventEntity?.Image ?? "";
+    var eventDate = eventEntity?.EventDate;
+}
+
+<div class="heritage-detail-wrap">
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="event-content">
+                @if (!string.IsNullOrWhiteSpace(eventTitle))
+                {
+                    <h1 class="event-title" id="eventTitle">@eventTitle</h1>
+                }
+                
+                <!-- Event Countdown -->
+                @if (eventDate.HasValue)
+                {
+                    <div id="eventCountdown" class="event-countdown mb-4" style="display: none;">
+                        <div class="countdown-container">
+                            <div class="countdown-item">
+                                <span class="countdown-value" id="countdownDays">0</span>
+                                <span class="countdown-label" data-translate="days">Ngày</span>
+                            </div>
+                            <div class="countdown-item">
+                                <span class="countdown-value" id="countdownHours">0</span>
+                                <span class="countdown-label" data-translate="hours">Giờ</span>
+                            </div>
+                            <div class="countdown-item">
+                                <span class="countdown-value" id="countdownMinutes">0</span>
+                                <span class="countdown-label" data-translate="minutes">Phút</span>
+                            </div>
+                            <div class="countdown-item">
+                                <span class="countdown-value" id="countdownSeconds">0</span>
+                                <span class="countdown-label" data-translate="seconds">Giây</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Event Expired Message -->
+                    <div id="eventExpired" class="event-expired mb-4 alert alert-warning" style="display: none;">
+                        <i class="bi bi-exclamation-triangle"></i> <span data-translate="eventExpired">Sự kiện đã kết thúc</span>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(eventSummary))
+                {
+                    <div class="event-lead" id="eventSummary">
+                        @Html.Raw(eventSummary)
+                    </div>
+                }
+                else
+                {
+                    <div class="event-lead" id="eventSummary" style="display:none;"></div>
+                }
+
+                <figure class="event-figure" id="eventFigure" style="@(string.IsNullOrWhiteSpace(eventImage) ? "display:none;" : "")">
+                    <img src="@eventImage" alt="@eventTitle" id="eventImage" loading="lazy" />
+                </figure>
+                
+                @if (!string.IsNullOrWhiteSpace(eventContent))
+                {
+                    <div class="content-body event-body" id="eventContent">
+                        @Html.Raw(eventContent)
+                    </div>
+                }
+                else
+                {
+                    <div class="content-body event-body" id="eventContent">
+                        <p class="text-muted" id="contentUpdatingText">Nội dung đang được cập nhật...</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Related Events Section -->
+            <div class="related-posts mt-5" id="relatedEventsSection" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0" id="relatedEventsTitle">Sự kiện liên quan</h3>
+                    <div class="view-toggle view-toggle-events">
+                        <button class="btn btn-xs btn-outline-secondary active" data-view="grid" id="gridViewBtn" title="">
+                            <i class="bi bi-grid" style="font-size: 0.875rem;"></i>
+                        </button>
+                        <button class="btn btn-xs btn-outline-secondary" data-view="list" id="listViewBtn" title="">
+                            <i class="bi bi-list" style="font-size: 0.875rem;"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="relatedEventsContainer" class="related-posts-container" data-view="grid">
+                    <!-- Related events will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<script>
+    // Store event data with all translations
+    const eventData = @Html.Raw(Json.Serialize(new {
+        Id = eventEntity?.Id,
+        Image = eventEntity?.Image,
+        EventDate = eventEntity?.EventDate,
+        CategoryName = eventEntity?.CategoryName,
+        CategoryIds = eventEntity?.CategoryIds ?? new List<string>(),
+        MenuIds = eventEntity?.MenuIds ?? new List<string>(),
+        Translations = eventEntity?.Translations
+    }));
+    
+    // Language translations
+    let eventTranslations = {};
+    let eventDefaultLang = 'vi';
+    
+    // Load translations
+    async function loadEventTranslations() {
+        try {
+            const response = await fetch('/locales/page.json');
+            if (response.ok) {
+                const data = await response.json();
+                eventDefaultLang = data.default || 'vi';
+                eventTranslations = data;
+            }
+        } catch (error) {
+            // Error loading event translations
+        }
+    }
+    
+    // Get translation by key
+    function t(key) {
+        let langCode = localStorage.getItem('selectedLanguage') || 'vi';
+        if (langCode && eventTranslations[langCode]) {
+            return eventTranslations[langCode][key] || eventTranslations[eventDefaultLang]?.[key] || key;
+        }
+        return eventTranslations[eventDefaultLang]?.[key] || key;
+    }
+    
+    // Update related events title
+    function updateRelatedEventsTitle() {
+        // Ensure translations are loaded
+        if (Object.keys(eventTranslations).length === 0) {
+            // If translations not loaded yet, wait a bit and try again
+            setTimeout(() => {
+                updateRelatedEventsTitle();
+            }, 50);
+            return;
+        }
+        
+        const titleEl = document.getElementById('relatedEventsTitle');
+        if (titleEl) {
+            const titleText = t('relatedEvents');
+            titleEl.textContent = titleText;
+        } else {
+            // Element not found, wait a bit and try again
+            setTimeout(() => {
+                updateRelatedEventsTitle();
+            }, 50);
+        }
+        
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        if (gridViewBtn) {
+            gridViewBtn.title = t('gridView');
+        }
+        
+        const listViewBtn = document.getElementById('listViewBtn');
+        if (listViewBtn) {
+            listViewBtn.title = t('listView');
+        }
+    }
+    
+    let relatedEventsView = 'grid';
+    
+    // Event countdown timer
+    let countdownInterval = null;
+    
+    function startEventCountdown() {
+        // Clear existing interval
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+        
+        const eventDate = eventData?.EventDate || eventData?.eventDate;
+        if (!eventDate) {
+            return;
+        }
+        
+        const targetDate = new Date(eventDate);
+        const now = new Date();
+        
+        // Check if event has passed
+        if (targetDate <= now) {
+            // Event has expired
+            const countdownEl = document.getElementById('eventCountdown');
+            const expiredEl = document.getElementById('eventExpired');
+            
+            if (countdownEl) {
+                countdownEl.style.display = 'none';
+            }
+            if (expiredEl) {
+                expiredEl.style.display = 'block';
+            }
+            return;
+        }
+        
+        // Show countdown
+        const countdownEl = document.getElementById('eventCountdown');
+        const expiredEl = document.getElementById('eventExpired');
+        
+        if (countdownEl) {
+            countdownEl.style.display = 'block';
+        }
+        if (expiredEl) {
+            expiredEl.style.display = 'none';
+        }
+        
+        // Update countdown immediately
+        updateCountdown(targetDate);
+        
+        // Update countdown every second
+        countdownInterval = setInterval(() => {
+            const now = new Date();
+            if (targetDate <= now) {
+                // Event has expired
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+                
+                if (countdownEl) {
+                    countdownEl.style.display = 'none';
+                }
+                if (expiredEl) {
+                    expiredEl.style.display = 'block';
+                }
+            } else {
+                updateCountdown(targetDate);
+            }
+        }, 1000);
+    }
+    
+    function updateCountdown(targetDate) {
+        const now = new Date();
+        const diff = targetDate - now;
+        
+        if (diff <= 0) {
+            return;
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        const daysEl = document.getElementById('countdownDays');
+        const hoursEl = document.getElementById('countdownHours');
+        const minutesEl = document.getElementById('countdownMinutes');
+        const secondsEl = document.getElementById('countdownSeconds');
+        
+        if (daysEl) daysEl.textContent = days.toString().padStart(2, '0');
+        if (hoursEl) hoursEl.textContent = hours.toString().padStart(2, '0');
+        if (minutesEl) minutesEl.textContent = minutes.toString().padStart(2, '0');
+        if (secondsEl) secondsEl.textContent = seconds.toString().padStart(2, '0');
+    }
+    
+    function updateCountdownLabels() {
+        document.querySelectorAll('.countdown-label[data-translate]').forEach(el => {
+            const key = el.getAttribute('data-translate');
+            if (key) {
+                el.textContent = t(key);
+            }
+        });
+    }
+    
+    // Set view for related events
+    function setRelatedEventsView(view) {
+        relatedEventsView = view;
+        const relatedEventsContainer = document.getElementById('relatedEventsContainer');
+        if (relatedEventsContainer) {
+            relatedEventsContainer.setAttribute('data-view', view);
+        }
+        
+        // Update toggle buttons
+        const toggleButtons = document.querySelectorAll('.view-toggle-events button');
+        toggleButtons.forEach(btn => {
+            if (btn.getAttribute('data-view') === view) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get current language from localStorage
+        const currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+        
+        // Load translations first
+        await loadEventTranslations();
+        
+        // Update event content based on current language from localStorage
+        updateEventLanguage(currentLang);
+        
+        // Start countdown timer
+        startEventCountdown();
+        
+        // Update countdown labels
+        updateCountdownLabels();
+        
+        // Wait a bit to ensure DOM is fully ready and other scripts have run
+        setTimeout(() => {
+            // Update related events title (ensure translations are loaded and DOM is ready)
+            updateRelatedEventsTitle();
+            
+            // Load related events
+            loadRelatedEvents();
+        }, 100);
+        
+        // Setup view toggle buttons
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        
+        if (gridViewBtn) {
+            gridViewBtn.addEventListener('click', function() {
+                setRelatedEventsView('grid');
+            });
+        }
+        
+        if (listViewBtn) {
+            listViewBtn.addEventListener('click', function() {
+                setRelatedEventsView('list');
+            });
+        }
+        
+        // Listen for language change events
+        window.addEventListener('languageChanged', async function(event) {
+            const newLang = event.detail?.langCode || 'vi';
+            
+            // Reload translations
+            await loadEventTranslations();
+            
+            // Update related events title and button tooltips
+            updateRelatedEventsTitle();
+            
+            // Update event content without reload
+            updateEventLanguage(newLang);
+            
+            // Update countdown labels
+            updateCountdownLabels();
+            
+            // Update expired message if visible
+            const expiredEl = document.getElementById('eventExpired');
+            if (expiredEl && expiredEl.style.display !== 'none') {
+                const expiredText = expiredEl.querySelector('[data-translate="eventExpired"]');
+                if (expiredText) {
+                    expiredText.textContent = t('eventExpired');
+                }
+            }
+            
+            // Reload related events with new language
+            loadRelatedEvents();
+        });
+    });
+    
+    // Update event content based on selected language
+    function updateEventLanguage(langCode) {
+        // Check both PascalCase and camelCase for Translations
+        const translations = eventData?.Translations || eventData?.translations || [];
+        if (!eventData || !translations || translations.length === 0) return;
+        
+        // Find translation matching current language
+        let translation = null;
+        
+        // First try exact match (check both PascalCase and camelCase)
+        translation = translations.find(t => {
+            const lang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+            return lang === langCode.toLowerCase();
+        });
+        
+        // If no exact match, try language code prefix
+        if (!translation) {
+            translation = translations.find(t => {
+                const tLang = (t.LanguageCode || t.languageCode || '').toLowerCase();
+                const currentLang = langCode.toLowerCase();
+                return tLang === currentLang || 
+                       tLang.substring(0, 2) === currentLang.substring(0, 2);
+            });
+        }
+        
+        // Fallback to first translation
+        if (!translation && translations.length > 0) {
+            translation = translations[0];
+        }
+        
+        if (!translation) return;
+        
+        // Get translation properties (check both PascalCase and camelCase)
+        const title = translation.Title || translation.title || 'Sự kiện';
+        const summary = translation.Summary || translation.summary || '';
+        const content = translation.Content || translation.content || translation.Description || translation.description || '';
+        
+        // Update page title
+        if (document.title) {
+            document.title = title + ' - ' + (document.title.split(' - ')[1] || '');
+        }
+        
+        // Update event title
+        const titleEl = document.getElementById('eventTitle');
+        if (titleEl) {
+            titleEl.textContent = title;
+        }
+        
+        // Update event summary
+        const summaryEl = document.getElementById('eventSummary');
+        if (summaryEl) {
+            if (summary) {
+                summaryEl.innerHTML = summary;
+                summaryEl.style.display = '';
+            } else {
+                summaryEl.innerHTML = '';
+                summaryEl.style.display = 'none';
+            }
+        }
+
+        const figureEl = document.getElementById('eventFigure');
+        const imageEl = document.getElementById('eventImage');
+        const hasImage = !!(eventData?.Image || eventData?.image);
+        if (figureEl) {
+            figureEl.style.display = hasImage ? '' : 'none';
+        }
+        if (imageEl) {
+            imageEl.alt = title;
+        }
+        
+        // Update event content
+        const contentEl = document.getElementById('eventContent');
+        if (contentEl) {
+            if (content) {
+                contentEl.innerHTML = content;
+            } else {
+                const updatingText = t('contentUpdating');
+                contentEl.innerHTML = `<p class="text-muted">${updatingText}</p>`;
+            }
+            
+            // Update content updating text if exists
+            const updatingTextEl = document.getElementById('contentUpdatingText');
+            if (updatingTextEl) {
+                updatingTextEl.textContent = t('contentUpdating');
+            }
+        }
+        
+        // Update related events title
+        updateRelatedEventsTitle();
+        
+        // Reload related events with new language
+        loadRelatedEvents();
+    }
+    
+    async function loadRelatedEvents() {
+        const relatedEventsSection = document.getElementById('relatedEventsSection');
+        const relatedEventsContainer = document.getElementById('relatedEventsContainer');
+        
+        if (!relatedEventsSection || !relatedEventsContainer) return;
+        
+        const categoryIds = [...(eventData?.CategoryIds || eventData?.categoryIds || [])];
+        const singleCategoryId = eventData?.CategoryId || eventData?.categoryId;
+        if (!categoryIds.length && singleCategoryId) {
+            categoryIds.push(singleCategoryId);
+        }
+
+        const menuIds = eventData?.MenuIds || eventData?.menuIds || [];
+        const currentEventId = String(eventData?.Id || eventData?.id || '');
+        const MAX_EVENTS = 12;
+        const allEvents = [];
+        const seenEventIds = new Set();
+
+        function isPublished(item) {
+            const published = item.published ?? item.Published;
+            return published === true || published === 1;
+        }
+
+        function collectItems(items) {
+            if (!items || !Array.isArray(items)) return;
+            for (const item of items) {
+                if (allEvents.length >= MAX_EVENTS) break;
+                const itemId = String(item.id || item.Id || '');
+                if (itemId !== currentEventId && !seenEventIds.has(itemId) && isPublished(item)) {
+                    seenEventIds.add(itemId);
+                    allEvents.push(item);
+                }
+            }
+        }
+
+        async function fetchEventItems(url) {
+            try {
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) return [];
+                const data = await response.json();
+                return data.items || [];
+            } catch {
+                return [];
+            }
+        }
+        
+        try {
+            for (const categoryId of categoryIds) {
+                if (allEvents.length >= MAX_EVENTS) break;
+                const remaining = MAX_EVENTS - allEvents.length;
+                const pageSize = Math.min(remaining + 5, 12);
+                const items = await fetchEventItems(`/api/Portal/events?categoryId=${encodeURIComponent(categoryId)}&pageNumber=1&pageSize=${pageSize}`);
+                collectItems(items);
+            }
+
+            if (allEvents.length < MAX_EVENTS && menuIds.length > 0) {
+                for (const menuId of menuIds) {
+                    if (allEvents.length >= MAX_EVENTS) break;
+                    const remaining = MAX_EVENTS - allEvents.length;
+                    const pageSize = Math.min(remaining + 5, 12);
+                    const items = await fetchEventItems(`/api/Portal/events/menu/${encodeURIComponent(menuId)}?pageNumber=1&pageSize=${pageSize}`);
+                    collectItems(items);
+                }
+            }
+
+            if (allEvents.length < MAX_EVENTS) {
+                const items = await fetchEventItems(`/api/Portal/events?pageNumber=1&pageSize=${MAX_EVENTS + 5}`);
+                collectItems(items);
+            }
+            
+            const sortedEvents = allEvents
+                .sort((a, b) => {
+                    const dateA = a.eventDate || a.dateAdd ? new Date(a.eventDate || a.dateAdd) : new Date(0);
+                    const dateB = b.eventDate || b.dateAdd ? new Date(b.eventDate || b.dateAdd) : new Date(0);
+                    return dateB - dateA;
+                })
+                .slice(0, MAX_EVENTS);
+            
+            if (sortedEvents.length === 0) {
+                relatedEventsSection.style.display = 'none';
+                return;
+            }
+            
+            const currentLang = localStorage.getItem('selectedLanguage') || '@currentLang' || 'vi';
+            renderRelatedEvents(sortedEvents, currentLang, '@pageSlug');
+            relatedEventsSection.style.display = 'block';
+        } catch (error) {
+            relatedEventsSection.style.display = 'none';
+        }
+    }
+    
+    function renderRelatedEvents(events, langCode, pageSlug) {
+        const relatedEventsContainer = document.getElementById('relatedEventsContainer');
+        if (!relatedEventsContainer) return;
+        
+        relatedEventsContainer.innerHTML = '';
+        relatedEventsContainer.setAttribute('data-view', relatedEventsView);
+        
+        // Always get current language from localStorage (not from parameter)
+        const currentLang = localStorage.getItem('selectedLanguage') || langCode || 'vi';
+        
+        events.forEach(eventEntity => {
+            // Find translation matching current language
+            let translation = null;
+            if (eventEntity.translations && Array.isArray(eventEntity.translations)) {
+                // First try exact match (check both PascalCase and camelCase)
+                translation = eventEntity.translations.find(t => {
+                    const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                    return tLang === currentLang.toLowerCase();
+                });
+                
+                // If no exact match, try language code prefix
+                if (!translation) {
+                    translation = eventEntity.translations.find(t => {
+                        const tLang = (t.languageCode || t.LanguageCode || '').toLowerCase();
+                        const lang = currentLang.toLowerCase();
+                        return tLang.substring(0, 2) === lang.substring(0, 2);
+                    });
+                }
+                
+                // Fallback to first translation
+                if (!translation && eventEntity.translations.length > 0) {
+                    translation = eventEntity.translations[0];
+                }
+            }
+            
+            if (!translation) return;
+            
+            // Get translation properties (check both PascalCase and camelCase)
+            const eventId = eventEntity.id || eventEntity.Id || '';
+            const urlSlug = translation.urlSlug || translation.UrlSlug || '';
+            const title = translation.title || translation.Title || '';
+            // Try summary first, then description, then content as fallback
+            const summary = translation.summary || translation.Summary || 
+                           translation.description || translation.Description || 
+                           translation.content || translation.Content || '';
+            const image = eventEntity.image || eventEntity.Image || eventEntity.thumbnail || eventEntity.Thumbnail || '';
+            
+            // Generate link - always use direct route format: /event/{slug}
+            const defaultSlug = urlSlug || 'event'; // Use 'event' as default if no urlSlug
+            const link = `/event/${defaultSlug}`;
+            
+            // Render HTML summary directly (CSS will handle truncation)
+            const summaryHtml = summary || '';
+            
+            // Create event item (no Bootstrap grid wrapper - use CSS Grid)
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'related-post-item';
+            
+            itemDiv.innerHTML = `
+                ${image ? `<div class="related-post-media"><a href="${escapeHtml(link)}" class="related-post-media__link"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" class="related-post-image" onerror="this.closest('.related-post-media').style.display='none'"></a></div>` : ''}
+                <div class="related-post-body">
+                    <h4 class="related-post-title">
+                        <a href="${escapeHtml(link)}">${escapeHtml(title)}</a>
+                    </h4>
+                    ${summaryHtml ? `<div class="related-post-summary">${summaryHtml}</div>` : ''}
+                    <div class="related-post-meta">
+                        <a href="${escapeHtml(link)}" class="heritage-btn-continue">${escapeHtml(t('viewContinue') || t('viewDetails'))}</a>
+                    </div>
+                </div>
+            `;
+            
+            relatedEventsContainer.appendChild(itemDiv);
+        });
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+

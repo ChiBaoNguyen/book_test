@@ -1,0 +1,80 @@
+@{
+    var notification = ViewBag.Notification as CreativeWeb.Controllers.NotificationDto;
+    var currentLang = Context.Request.Cookies["selectedLanguage"] ?? "vi";
+    var translation = notification?.Translations?.FirstOrDefault(t => t.LanguageCode == currentLang)
+        ?? notification?.Translations?.FirstOrDefault();
+
+    ViewData["Title"] = translation?.Title ?? "Thông báo";
+    var title = translation?.Title ?? "Thông báo";
+    var content = translation?.Content ?? "";
+    var image = notification?.Image ?? "";
+    var from = notification?.From;
+    var to = notification?.To;
+}
+
+<div class="notif-detail-wrap">
+    <article class="notif-detail">
+        <a href="@Url.Action("Index", "Events")" class="notif-detail__back">
+            <i class="bi bi-arrow-left"></i>
+            <span data-i18n="eventsBackToList">Quay lại sự kiện &amp; thông báo</span>
+        </a>
+
+        <h1 class="notif-detail__title">@title</h1>
+
+        @if (from.HasValue || to.HasValue)
+        {
+            <div class="notif-detail__meta">
+                @if (from.HasValue && to.HasValue)
+                {
+                    <span><i class="bi bi-calendar-range"></i> @from.Value.ToString("dd/MM/yyyy") – @to.Value.ToString("dd/MM/yyyy")</span>
+                }
+                else if (from.HasValue)
+                {
+                    <span><i class="bi bi-calendar-event"></i> @from.Value.ToString("dd/MM/yyyy")</span>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(image))
+        {
+            <div class="notif-detail__image">
+                <img src="@image" alt="@title" loading="lazy" />
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(content))
+        {
+            <div class="notif-detail__content">
+                @Html.Raw(content)
+            </div>
+        }
+        else
+        {
+            <div class="notif-detail__content">
+                <p class="text-muted" data-i18n="contentUpdating">Nội dung đang được cập nhật...</p>
+            </div>
+        }
+    </article>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            async function applyI18n() {
+                try {
+                    const lang = localStorage.getItem('selectedLanguage') || 'vi';
+                    const res = await fetch('/locales/page.json');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const pack = data[lang] || data[data.default] || {};
+                    document.querySelectorAll('[data-i18n]').forEach(el => {
+                        const key = el.getAttribute('data-i18n');
+                        if (key && pack[key]) el.textContent = pack[key];
+                    });
+                } catch { /* ignore */ }
+            }
+            document.addEventListener('DOMContentLoaded', applyI18n);
+            window.addEventListener('languageChanged', applyI18n);
+        })();
+    </script>
+}
