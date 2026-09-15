@@ -1,0 +1,912 @@
+@{
+    var settings = await ApiService.GetSettingsAsync();
+    var siteName = settings?.GetValueOrDefault("SITE_NAME", "Bookle");
+    var siteLogo = settings?.GetValueOrDefault("SITE_LOGO", "");
+    var hotline = settings?.GetValueOrDefault("SITE_PHONE", "");
+    var email = settings?.GetValueOrDefault("SITE_EMAIL", "");
+    var languages = await ApiService.GetLanguagesAsync();
+}
+
+<!-- Offcanvas Area start  -->
+<div class="fix-area">
+    <div class="offcanvas__info">
+        <div class="offcanvas__wrapper">
+            <div class="offcanvas__content">
+                <div class="offcanvas__top mb-5 d-flex justify-content-between align-items-center">
+                    <div class="offcanvas__logo">
+                        <a href="@Url.Action("Index", "Home")">
+                            @if (!string.IsNullOrEmpty(siteLogo))
+                            {
+                                <img src="@siteLogo" alt="@siteName" />
+                            }
+                            else
+                            {
+                                <img src="/assets/img/logo/black-logo.svg" alt="@siteName">
+                            }
+                        </a>
+                    </div>
+                    <div class="offcanvas__close">
+                        <button>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+        @*         <p class="text d-none d-xl-block">
+                    Nullam dignissim, ante scelerisque the is euismod fermentum odio sem semper the is erat, a
+                    feugiat leo urna eget eros. Duis Aenean a imperdiet risus.
+                </p> *@
+                <div class="mobile-menu fix mb-3" id="heritageMobileNav"></div>
+                <div class="offcanvas__contact">
+                    <h4>Thông tin liên hệ</h4>
+                    <ul>
+                        @if (!string.IsNullOrEmpty(hotline))
+                        {
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon mr-15">
+                                    <i class="far fa-phone"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a href="tel:@hotline">@hotline</a>
+                                </div>
+                            </li>
+                        }
+                        @if (!string.IsNullOrEmpty(email))
+                        {
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon mr-15">
+                                    <i class="far fa-envelope"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a href="mailto:@email">@email</a>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="offcanvas__overlay"></div>
+
+<div class="header-top-1">
+    <div class="container">
+        <div class="header-top-wrapper">
+            <ul class="contact-list">
+                @if (!string.IsNullOrEmpty(hotline))
+                {
+                    <li>
+                        <i class="fa-regular fa-phone"></i>
+                        <a href="tel:@hotline">@hotline</a>
+                    </li>
+                }
+                @if (!string.IsNullOrEmpty(email))
+                {
+                    <li>
+                        <i class="far fa-envelope"></i>
+                        <a href="mailto:@email">@email</a>
+                    </li>
+                }
+            </ul>
+            <ul class="list">
+                @if (languages != null && languages.Any())
+                {
+                    <li class="heritage-lang" id="heritageLangSwitcher">
+                        @foreach (var lang in languages)
+                        {
+                            <button type="button"
+                                    class="lang-option @(lang.IsDefault ? "lang-active active" : "")"
+                                    data-heritage-lang="@lang.Code"
+                                    title="@lang.Name">
+                                @lang.Code.ToUpper()
+                            </button>
+                            @if (!lang.Equals(languages.Last()))
+                            {
+                                <span class="lang-sep">/</span>
+                            }
+                        }
+                    </li>
+                }
+                else
+                {
+                    <li class="heritage-lang">
+                        <span class="lang-active">VI</span>
+                        <span class="lang-sep">/</span>
+                        <button type="button" class="lang-option" data-heritage-lang="en">EN</button>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@* <!-- Sticky Header Section start  -->
+<header class="header-1 sticky-header">
+    <div class="mega-menu-wrapper">
+        <div class="header-main">
+            <div class="container">
+                <div class="row">
+                    <div class="col-6 col-md-6 col-lg-10 col-xl-8 col-xxl-10">
+                        <div class="header-left">
+                            <div class="logo">
+                                <a href="@Url.Action("Index", "Home")">
+                                    @if (!string.IsNullOrEmpty(siteLogo))
+                                    {
+                                        <img src="@siteLogo" alt="@siteName" />
+                                    }
+                                    else
+                                    {
+                                        <img src="~/assets/img/logo/white-logo.svg" alt="@siteName">
+                                    }
+                                </a>
+                            </div>
+                            <div class="mean__menu-wrapper">
+                                <div class="main-menu">
+                                    <nav>
+                                        <ul id="stickyMenuItems">
+                                            <!-- Dynamic menu items -->
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-6 col-lg-2 col-xl-4 col-xxl-2">
+                        <div class="header-right">
+                            <div class="menu-cart">
+                                <div class="header-humbager ml-30">
+                                    <a class="sidebar__toggle" href="javascript:void(0)" id="heritageMenuToggle" aria-label="Mở menu">
+                                        <div class="bar-icon-2">
+                                            <img src="~/assets/img/icon/icon-13.svg" alt="img">
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header> *@
+
+<!-- Main Header Section start  -->
+<header class="header-1" id="heritageHeader">
+    <div class="mega-menu-wrapper">
+        <div class="header-main">
+            <div class="container">
+                <div class="row">
+                    <div class="col-6 col-md-6 col-lg-10 col-xl-8 col-xxl-10">
+                        <div class="header-left">
+                            <div class="logo">
+                                <a href="@Url.Action("Index", "Home")">
+                                    @if (!string.IsNullOrEmpty(siteLogo))
+                                    {
+                                        <img src="@siteLogo" alt="@siteName" />
+                                    }
+                                    else
+                                    {
+                                        <img src="~/assets/img/logo/white-logo.svg" alt="@siteName">
+                                    }
+                                </a>
+                            </div>
+                            <div class="mean__menu-wrapper">
+                                <div class="main-menu">
+                                    <nav id="mobile-menu">
+                                        <ul id="menuItems">
+                                            <!-- Dynamic menu items -->
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-6 col-lg-2 col-xl-4 col-xxl-2">
+                        <div class="header-right">
+                            <div class="menu-cart">
+                                <div class="header-humbager ml-30">
+                                    <a class="sidebar__toggle" href="javascript:void(0)" id="heritageMenuToggle" aria-label="Mở menu">
+                                        <div class="bar-icon-2">
+                                            <img src="~/assets/img/icon/icon-13.svg" alt="img">
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<script>
+
+    // Mobile sidebar toggle handler
+    document.addEventListener('click', function (e) {
+        const toggle = e.target.closest('.sidebar__toggle, #heritageMenuToggle');
+        if (toggle) {
+            e.preventDefault();
+            document.querySelector('.offcanvas__info')?.classList.add('info-open');
+            document.querySelector('.offcanvas__overlay')?.classList.add('overlay-open');
+        }
+        const closeBtn = e.target.closest('.offcanvas__close, .offcanvas__overlay, #heritageMenuClose');
+        if (closeBtn) {
+            e.preventDefault();
+            document.querySelector('.offcanvas__info')?.classList.remove('info-open');
+            document.querySelector('.offcanvas__overlay')?.classList.remove('overlay-open');
+        }
+    });
+
+    // Load menu from API
+    async function loadMenu(langCode) {
+        try {
+            const response = await fetch(`/api/Api/menus/primary`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                return Promise.resolve();
+            }
+
+            const menus = JSON.parse(await response.text());
+            if (!menus || menus.length === 0) {
+                return Promise.resolve();
+            }
+
+            try {
+                localStorage.setItem('menuData', JSON.stringify(menus));
+            } catch (e) { }
+
+            const menuTree = buildMenuTree(menus);
+            renderMenu(menuTree);
+
+            setActiveNavLink();
+            checkCurrentUrlSlugInMenu(menus);
+
+            window.dispatchEvent(new CustomEvent('menuLoaded'));
+
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.resolve();
+        }
+    }
+
+    // Build hierarchical menu tree
+    function buildMenuTree(menus) {
+        const menuMap = new Map();
+        const rootMenus = [];
+
+        menus.forEach(menu => {
+            menuMap.set(menu.id, {
+                ...menu,
+                children: []
+            });
+        });
+
+        menus.forEach(menu => {
+            const menuItem = menuMap.get(menu.id);
+            if (menu.parentId && menuMap.has(menu.parentId)) {
+                menuMap.get(menu.parentId).children.push(menuItem);
+            } else {
+                rootMenus.push(menuItem);
+            }
+        });
+
+        const sortMenus = (items) => {
+            items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+            items.forEach(item => {
+                if (item.children.length > 0) {
+                    sortMenus(item.children);
+                }
+            });
+        };
+
+        sortMenus(rootMenus);
+        return rootMenus;
+    }
+
+    // Render menu items into containers
+    function renderMenu(menuTree) {
+        const mainContainer = document.getElementById('menuItems');
+        if (mainContainer) {
+            mainContainer.innerHTML = '';
+            menuTree.forEach(menu => {
+                const menuItem = createMenuItem(menu);
+                mainContainer.appendChild(menuItem);
+            });
+        }
+
+        const stickyContainer = document.getElementById('stickyMenuItems');
+        if (stickyContainer) {
+            stickyContainer.innerHTML = '';
+            menuTree.forEach(menu => {
+                const menuItem = createMenuItem(menu);
+                stickyContainer.appendChild(menuItem);
+            });
+        }
+
+        const mobileNav = document.getElementById('heritageMobileNav');
+        if (mobileNav) {
+            mobileNav.innerHTML = '';
+            const mobileUl = document.createElement('ul');
+            mobileUl.className = 'mobile-menu-list p-0 m-0';
+            mobileUl.style.listStyle = 'none';
+            menuTree.forEach(menu => {
+                const menuItem = createMobileMenuItem(menu);
+                mobileUl.appendChild(menuItem);
+            });
+            mobileNav.appendChild(mobileUl);
+        }
+
+        if (typeof $ !== 'undefined' && $.fn && $.fn.meanmenu) {
+            try {
+                $('.mobile-menu').empty();
+                $('#mobile-menu').meanmenu({
+                    meanMenuContainer: '.mobile-menu',
+                    meanScreenWidth: "1199",
+                    meanExpand: ['<i class="far fa-plus"></i>'],
+                });
+            } catch (e) { }
+        }
+    }
+
+    function getCurrentLanguageCode() {
+        return localStorage.getItem('selectedLanguage') || 'vi';
+    }
+
+    function generateSlug(title) {
+        if (!title) return '';
+        let slug = title.toLowerCase();
+        slug = slug.replace(/à|á|ạ|ả|ã|ầ|ấ|ậ|ẩ|ẫ|ằ|ắ|ặ|ẳ|ẵ/g, 'a');
+        slug = slug.replace(/è|é|ẹ|ẻ|ẽ|ề|ế|ệ|ể|ễ/g, 'e');
+        slug = slug.replace(/ì|í|ị|ỉ|ĩ/g, 'i');
+        slug = slug.replace(/ò|ó|ọ|ỏ|õ|ồ|ố|ộ|ổ|ỗ|ờ|ớ|ợ|ở|ỡ/g, 'o');
+        slug = slug.replace(/ù|ú|ụ|ủ|ũ|ừ|ứ|ự|ử|ữ/g, 'u');
+        slug = slug.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, 'y');
+        slug = slug.replace(/đ/g, 'd');
+        slug = slug.replace(/[^a-z0-9\s-]/g, '');
+        slug = slug.replace(/\s+/g, '-');
+        slug = slug.replace(/-+/g, '-');
+        slug = slug.replace(/^-+|-+$/g, '');
+        return slug;
+    }
+
+    function getMenuHref(menu, translation) {
+        const isHomePageRaw = menu.isHomePage !== undefined ? menu.isHomePage : (menu.ishomepage !== undefined ? menu.ishomepage : false);
+        const isHomePage = isHomePageRaw === true || isHomePageRaw === 'true' || isHomePageRaw === 1 || isHomePageRaw === '1';
+
+        const showSinglePostRaw = menu.showSinglePost !== undefined ? menu.showSinglePost : (menu.showsinglepost !== undefined ? menu.showsinglepost : false);
+        const showSinglePost = showSinglePostRaw === true || showSinglePostRaw === 'true' || showSinglePostRaw === 1 || showSinglePostRaw === '1';
+
+        const useLinkRaw = menu.useLink !== undefined ? menu.useLink : (menu.uselink !== undefined ? menu.uselink : false);
+        const useLink = useLinkRaw === true || useLinkRaw === 'true' || useLinkRaw === 1 || useLinkRaw === '1';
+
+        const linkTypeRaw = menu.linkType || menu.linktype || '';
+        const linkType = linkTypeRaw ? String(linkTypeRaw).toLowerCase().trim() : 'internal';
+
+        const linkTargetRaw = menu.linkTarget || menu.linktarget || '';
+        const linkTarget = linkTargetRaw ? String(linkTargetRaw).trim() : '';
+        const linkTargetLower = linkTarget ? linkTarget.toLowerCase().trim() : '';
+
+        const singlePostId = menu.singlePostId || menu.singlepostid || null;
+
+        let href = '#';
+        const urlSlug = translation.urlSlug || '';
+        const urlSlugLower = urlSlug ? urlSlug.toLowerCase().trim() : '';
+
+        if (isHomePage) {
+            href = '/home';
+        } else if (useLink && linkTarget) {
+            if (linkType === 'internal') {
+                let baseUrl = '';
+                if (linkTarget.startsWith('http://') || linkTarget.startsWith('https://')) {
+                    baseUrl = linkTarget;
+                } else if (linkTarget.startsWith('/')) {
+                    baseUrl = window.location.origin + linkTarget;
+                } else {
+                    baseUrl = window.location.origin + '/' + linkTarget;
+                }
+                if (urlSlug && urlSlug.trim()) {
+                    const slug = urlSlug.trim();
+                    href = baseUrl.includes('?') ? baseUrl + '&s=' + encodeURIComponent(slug) : baseUrl + '?s=' + encodeURIComponent(slug);
+                } else {
+                    href = baseUrl;
+                }
+            } else {
+                let baseUrl = linkTarget.startsWith('http://') || linkTarget.startsWith('https://')
+                    ? linkTarget
+                    : (linkTarget.startsWith('/') ? linkTarget : '/' + linkTarget);
+                if (urlSlug && urlSlug.trim()) {
+                    const slug = urlSlug.trim();
+                    href = baseUrl.includes('?') ? baseUrl + '&s=' + encodeURIComponent(slug) : baseUrl + '?s=' + encodeURIComponent(slug);
+                } else {
+                    href = baseUrl;
+                }
+            }
+        } else if (showSinglePost && singlePostId) {
+            let slug = singlePostId;
+            const singlePostTranslations = menu.singlePostTranslations || menu.singleposttranslations || null;
+            if (singlePostTranslations && Array.isArray(singlePostTranslations) && singlePostTranslations.length > 0) {
+                const currentLang = getCurrentLanguageCode().toLowerCase().trim();
+                let foundTranslation = singlePostTranslations.find(t =>
+                    t.languageCode && String(t.languageCode).toLowerCase().trim() === currentLang
+                ) || singlePostTranslations.find(t =>
+                    t.languageCode && String(t.languageCode).toLowerCase().trim().substring(0, 2) === currentLang.substring(0, 2)
+                ) || singlePostTranslations[0];
+
+                const spSlug = foundTranslation.urlSlug || foundTranslation.urlslug || null;
+                if (spSlug && String(spSlug).trim()) {
+                    slug = String(spSlug).trim();
+                }
+            }
+            if (slug === singlePostId && translation && translation.title) {
+                slug = generateSlug(translation.title);
+            }
+            href = '/content/' + slug;
+        } else if (urlSlugLower === 'contact' || linkTargetLower === 'contact') {
+            href = '/contact';
+        } else if (['gallery', 'album', '/gallery', '/album'].includes(urlSlugLower) || ['gallery', 'album', '/gallery', '/album'].includes(linkTargetLower)) {
+            href = '/gallery';
+        } else if (['events', 'su-kien', 'lich-su-kien', '/events', '/su-kien'].includes(urlSlugLower) || ['events', 'su-kien', '/events', '/su-kien'].includes(linkTargetLower)) {
+            href = '/events';
+        } else if (linkType === 'external' && urlSlug) {
+            href = urlSlug;
+        } else if (linkType === 'internal' && urlSlug) {
+            href = '/page/' + urlSlug;
+        } else if (urlSlug) {
+            href = '/' + urlSlug;
+        }
+
+        return href;
+    }
+
+    // Create menu item element (Desktop)
+    function createMenuItem(menu) {
+        const li = document.createElement('li');
+
+        const currentLang = getCurrentLanguageCode().toLowerCase().trim();
+        let translation = null;
+        if (menu.translations && menu.translations.length > 0) {
+            translation = menu.translations.find(t => {
+                if (!t.languageCode) return false;
+                const tLang = String(t.languageCode).toLowerCase().trim();
+                return tLang === currentLang || tLang.substring(0, 2) === currentLang.substring(0, 2);
+            }) || menu.translations[0];
+        }
+
+        if (!translation || !translation.title) {
+            return li;
+        }
+
+        const href = getMenuHref(menu, translation);
+        const link = document.createElement('a');
+        link.className = 'nav-link';
+        link.href = href;
+        link.textContent = translation.title;
+
+        const useLinkRaw = menu.useLink !== undefined ? menu.useLink : (menu.uselink !== undefined ? menu.uselink : false);
+        const useLink = useLinkRaw === true || useLinkRaw === 'true' || useLinkRaw === 1 || useLinkRaw === '1';
+        const linkTypeRaw = menu.linkType || menu.linktype || '';
+        const linkType = linkTypeRaw ? String(linkTypeRaw).toLowerCase().trim() : 'internal';
+        const linkTargetRaw = menu.linkTarget || menu.linktarget || '';
+        const linkTargetLower = linkTargetRaw ? String(linkTargetRaw).toLowerCase().trim() : '';
+
+        if (useLink) {
+            if (linkType === 'internal') {
+                link.removeAttribute('target');
+                link.removeAttribute('rel');
+            } else {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            }
+        } else {
+            if (linkType === 'external' || linkTargetLower === '_blank') {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            } else {
+                link.removeAttribute('target');
+                link.removeAttribute('rel');
+            }
+        }
+
+        if (menu.children && menu.children.length > 0) {
+            li.classList.add('has-dropdown');
+
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-angle-down ms-1';
+            link.appendChild(icon);
+
+            const dropdownMenu = document.createElement('ul');
+            dropdownMenu.className = 'submenu';
+
+            menu.children.forEach(child => {
+                const childItem = createMenuItem(child);
+                if (childItem && childItem.textContent.trim() !== '') {
+                    dropdownMenu.appendChild(childItem);
+                }
+            });
+
+            if (dropdownMenu.children.length > 0) {
+                li.appendChild(link);
+                li.appendChild(dropdownMenu);
+            } else {
+                li.appendChild(link);
+            }
+        } else {
+            li.appendChild(link);
+        }
+
+        return li;
+    }
+
+    // Create menu item element (Mobile)
+    function createMobileMenuItem(menu) {
+        const li = document.createElement('li');
+        li.className = 'mobile-nav-item py-2 border-bottom';
+        li.style.listStyle = 'none';
+
+        const currentLang = getCurrentLanguageCode().toLowerCase().trim();
+        let translation = null;
+        if (menu.translations && menu.translations.length > 0) {
+            translation = menu.translations.find(t => {
+                if (!t.languageCode) return false;
+                const tLang = String(t.languageCode).toLowerCase().trim();
+                return tLang === currentLang || tLang.substring(0, 2) === currentLang.substring(0, 2);
+            }) || menu.translations[0];
+        }
+
+        if (!translation || !translation.title) {
+            return li;
+        }
+
+        const href = getMenuHref(menu, translation);
+        const linkContainer = document.createElement('div');
+        linkContainer.className = 'd-flex justify-content-between align-items-center';
+
+        const link = document.createElement('a');
+        link.className = 'mobile-nav-link text-decoration-none fw-semibold';
+        link.style.color = '#012E4A';
+        link.href = href;
+        link.textContent = translation.title;
+        linkContainer.appendChild(link);
+
+        if (menu.children && menu.children.length > 0) {
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'btn btn-sm btn-link text-dark p-0 text-decoration-none ms-2';
+            toggleBtn.innerHTML = '<i class="far fa-plus"></i>';
+
+            const subUl = document.createElement('ul');
+            subUl.className = 'mobile-submenu ps-3 pt-2 m-0';
+            subUl.style.display = 'none';
+            subUl.style.listStyle = 'none';
+
+            toggleBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (subUl.style.display === 'none') {
+                    subUl.style.display = 'block';
+                    toggleBtn.innerHTML = '<i class="far fa-minus"></i>';
+                } else {
+                    subUl.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="far fa-plus"></i>';
+                }
+            });
+
+            menu.children.forEach(child => {
+                const childItem = createMobileMenuItem(child);
+                if (childItem && childItem.textContent.trim() !== '') {
+                    subUl.appendChild(childItem);
+                }
+            });
+
+            linkContainer.appendChild(toggleBtn);
+            li.appendChild(linkContainer);
+            li.appendChild(subUl);
+        } else {
+            li.appendChild(linkContainer);
+        }
+
+        return li;
+    }
+
+    // Set active nav link based on current page
+    function setActiveNavLink() {
+        const currentPath = window.location.pathname.toLowerCase();
+        const navLinks = document.querySelectorAll('.main-menu .nav-link');
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+        });
+
+        let activeFound = false;
+        navLinks.forEach(link => {
+            try {
+                const linkPath = new URL(link.href, window.location.origin).pathname.toLowerCase();
+
+                if (currentPath === linkPath) {
+                    link.classList.add('active');
+                    activeFound = true;
+                } else if (currentPath !== '/' && linkPath !== '/' && currentPath.startsWith(linkPath) && linkPath.length > 1) {
+                    if (!activeFound) {
+                        link.classList.add('active');
+                    }
+                }
+            } catch (e) { }
+        });
+    }
+
+    // Check current URL slug against menu items
+    function checkCurrentUrlSlugInMenu(menus) {
+        if (!menus || menus.length === 0) {
+            try {
+                const savedMenu = localStorage.getItem('menuData');
+                if (savedMenu) {
+                    menus = JSON.parse(savedMenu);
+                }
+            } catch (e) {
+                return null;
+            }
+        }
+
+        if (!menus || menus.length === 0) {
+            return null;
+        }
+
+        const currentPath = window.location.pathname;
+        const currentPathLower = currentPath.toLowerCase();
+
+        let currentSlug = '';
+        if (currentPathLower.startsWith('/page/')) {
+            currentSlug = currentPath.substring(6);
+        } else if (currentPathLower.startsWith('/content/')) {
+            currentSlug = currentPath.substring(9);
+        } else if (currentPathLower.startsWith('/article/')) {
+            currentSlug = currentPath.substring(9);
+        } else if (currentPathLower.startsWith('/event/')) {
+            currentSlug = 'events';
+        } else if (currentPathLower.startsWith('/book/')) {
+            currentSlug = currentPath.substring(6);
+        } else if (currentPathLower.startsWith('/product/')) {
+            currentSlug = currentPath.substring(9);
+        } else if (currentPathLower === '/home' || currentPathLower === '/') {
+            currentSlug = 'home';
+        } else if (currentPathLower === '/contact') {
+            currentSlug = 'contact';
+        } else if (currentPathLower === '/gallery' || currentPathLower === '/album' || currentPathLower.startsWith('/gallery/')) {
+            currentSlug = 'gallery';
+        } else if (currentPathLower === '/events' || currentPathLower === '/su-kien' || currentPathLower.startsWith('/notification/')) {
+            currentSlug = 'events';
+        } else if (currentPathLower.startsWith('/album/')) {
+            currentSlug = 'gallery';
+        }
+
+        let matchedMenu = null;
+        for (const menu of menus) {
+            if (menu.translations && menu.translations.length > 0) {
+                for (const translation of menu.translations) {
+                    const urlSlug = translation.urlSlug || '';
+                    const urlSlugLower = urlSlug.toLowerCase().trim();
+
+                    if (urlSlugLower === currentSlug.toLowerCase().trim() || (urlSlugLower && currentPathLower.includes(urlSlugLower))) {
+                        matchedMenu = menu;
+                        break;
+                    }
+                }
+            }
+
+            if (!matchedMenu && (menu.showSinglePost || menu.showsinglepost) && (menu.singlePostTranslations || menu.singleposttranslations)) {
+                const singlePostTranslations = menu.singlePostTranslations || menu.singleposttranslations || [];
+                if (Array.isArray(singlePostTranslations)) {
+                    for (const spTrans of singlePostTranslations) {
+                        const urlSlug = spTrans.urlSlug || spTrans.urlslug || '';
+                        const urlSlugLower = urlSlug.toLowerCase().trim();
+
+                        if (urlSlugLower === currentSlug.toLowerCase().trim() || (urlSlugLower && currentPathLower.includes(urlSlugLower))) {
+                            matchedMenu = menu;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (matchedMenu) break;
+        }
+
+        if (matchedMenu) {
+            try {
+                localStorage.setItem('currentMenuMatch', JSON.stringify(matchedMenu));
+            } catch (e) { }
+            return matchedMenu;
+        }
+        return null;
+    }
+
+    function findMenuInData(menus, predicate) {
+        if (!menus || !Array.isArray(menus)) return null;
+        for (const menu of menus) {
+            if (predicate(menu)) return menu;
+            if (menu.children && Array.isArray(menu.children) && menu.children.length > 0) {
+                const found = findMenuInData(menu.children, predicate);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    function getSinglePostTranslationsFromMenu(menuId) {
+        try {
+            const savedMenu = localStorage.getItem('menuData');
+            if (!savedMenu) return null;
+            const menus = JSON.parse(savedMenu);
+            const menu = findMenuInData(menus, m => {
+                const mId = m.id || m.Id || null;
+                return mId && String(mId).trim() === String(menuId).trim();
+            });
+            if (!menu) return null;
+            const singlePostTranslations = menu.singlePostTranslations || menu.singleposttranslations || null;
+            if (singlePostTranslations && Array.isArray(singlePostTranslations) && singlePostTranslations.length > 0) {
+                return singlePostTranslations;
+            }
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function getSinglePostFromMenu(menuId) {
+        const translations = getSinglePostTranslationsFromMenu(menuId);
+        if (!translations) return null;
+        return { translations: translations };
+    }
+
+    function getSinglePostTranslationFromMenu(menuId, langCode) {
+        try {
+            const translations = getSinglePostTranslationsFromMenu(menuId);
+            if (!translations || translations.length === 0) return null;
+            const langCodeLower = String(langCode || '').toLowerCase().trim();
+
+            let translation = translations.find(t => {
+                const tLang = String(t.languageCode || t.LanguageCode || '').toLowerCase().trim();
+                return tLang === langCodeLower;
+            });
+
+            if (!translation && langCodeLower.length >= 2) {
+                const langPrefix = langCodeLower.substring(0, 2);
+                translation = translations.find(t => {
+                    const tLang = String(t.languageCode || t.LanguageCode || '').toLowerCase().trim();
+                    return tLang.length >= 2 && tLang.substring(0, 2) === langPrefix;
+                });
+            }
+
+            if (!translation) {
+                translation = translations[0];
+            }
+            return translation;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function getMenuBySinglePostId(singlePostId) {
+        try {
+            const savedMenu = localStorage.getItem('menuData');
+            if (!savedMenu) return null;
+            const menus = JSON.parse(savedMenu);
+            return findMenuInData(menus, m => {
+                const spId = m.singlePostId || m.singlepostid || null;
+                return spId && String(spId).trim() === String(singlePostId).trim();
+            }) || null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function getMenuBySinglePostUrlSlug(urlSlug) {
+        try {
+            const savedMenu = localStorage.getItem('menuData');
+            if (!savedMenu) return null;
+            const menus = JSON.parse(savedMenu);
+            const urlSlugLower = String(urlSlug || '').toLowerCase().trim();
+            return findMenuInData(menus, m => {
+                if (!(m.showSinglePost || m.showsinglepost)) return false;
+                const singlePostTranslations = m.singlePostTranslations || m.singleposttranslations || null;
+                if (singlePostTranslations && Array.isArray(singlePostTranslations)) {
+                    return singlePostTranslations.some(t => String(t.urlSlug || t.urlslug || '').toLowerCase().trim() === urlSlugLower);
+                }
+                return false;
+            }) || null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Export functions globally
+    window.checkCurrentUrlSlugInMenu = checkCurrentUrlSlugInMenu;
+    window.loadMenu = loadMenu;
+    window.getSinglePostTranslationsFromMenu = getSinglePostTranslationsFromMenu;
+    window.getSinglePostFromMenu = getSinglePostFromMenu;
+    window.getSinglePostTranslationFromMenu = getSinglePostTranslationFromMenu;
+    window.getMenuBySinglePostId = getMenuBySinglePostId;
+    window.getMenuBySinglePostUrlSlug = getMenuBySinglePostUrlSlug;
+    window.findMenuInData = findMenuInData;
+
+    function ensureInternalLinks() {
+        const menuLinks = document.querySelectorAll('#menuItems .nav-link');
+        menuLinks.forEach(link => {
+            if (!link.hasAttribute('target') || link.getAttribute('target') !== '_blank') {
+                link.removeAttribute('target');
+                link.addEventListener('click', function (e) {
+                    if (!this.hasAttribute('target') || this.getAttribute('target') !== '_blank') {
+                        this.removeAttribute('target');
+                    }
+                });
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const currentLang = localStorage.getItem('selectedLanguage') || 'vi';
+        let menuData = null;
+        try {
+            const savedMenu = localStorage.getItem('menuData');
+            if (savedMenu) {
+                menuData = JSON.parse(savedMenu);
+            }
+        } catch (e) { }
+
+        loadMenu(currentLang).then(() => {
+            setTimeout(ensureInternalLinks, 100);
+            setTimeout(() => {
+                let menus = null;
+                try {
+                    const savedMenu = localStorage.getItem('menuData');
+                    if (savedMenu) menus = JSON.parse(savedMenu);
+                } catch (e) { }
+                if (menus) checkCurrentUrlSlugInMenu(menus);
+            }, 200);
+        });
+
+        if (menuData) {
+            setTimeout(() => {
+                checkCurrentUrlSlugInMenu(menuData);
+            }, 100);
+        }
+
+        // Language switcher click handler
+        document.addEventListener('click', function (e) {
+            const langBtn = e.target.closest('[data-heritage-lang]');
+            if (langBtn) {
+                const langCode = langBtn.getAttribute('data-heritage-lang');
+                if (langCode) {
+                    localStorage.setItem('selectedLanguage', langCode);
+                    document.querySelectorAll('[data-heritage-lang]').forEach(btn => {
+                        const isMatch = btn.getAttribute('data-heritage-lang') === langCode;
+                        btn.classList.toggle('active', isMatch);
+                        btn.classList.toggle('lang-active', isMatch);
+                    });
+                    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { langCode: langCode } }));
+                }
+            }
+        });
+
+        window.addEventListener('languageChanged', function (event) {
+            const newLang = event.detail?.langCode || currentLang;
+            loadMenu(newLang).then(() => {
+                setTimeout(ensureInternalLinks, 100);
+                setTimeout(() => {
+                    let menus = null;
+                    try {
+                        const savedMenu = localStorage.getItem('menuData');
+                        if (savedMenu) menus = JSON.parse(savedMenu);
+                    } catch (e) { }
+                    if (menus) checkCurrentUrlSlugInMenu(menus);
+                }, 200);
+            });
+        });
+    });
+</script>

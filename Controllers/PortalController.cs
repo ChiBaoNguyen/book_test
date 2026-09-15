@@ -128,6 +128,31 @@ namespace CreativeWeb.Controllers
             }
         }
 
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetCategories([FromQuery] string? langCode = null)
+        {
+            try
+            {
+                var endpoint = "/api/Portal/categories";
+                if (!string.IsNullOrWhiteSpace(langCode))
+                {
+                    endpoint += $"?langCode={Uri.EscapeDataString(langCode)}";
+                }
+
+                var json = await _apiService.GetRawAsync(endpoint);
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return Ok(Array.Empty<object>());
+                }
+
+                return Content(json, "application/json");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while fetching categories.", error = ex.Message });
+            }
+        }
+
         private static string StripArticleListContent(string json)
         {
             try
@@ -1422,4 +1447,3 @@ namespace CreativeWeb.Controllers
         }
     }
 }
-

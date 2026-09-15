@@ -120,6 +120,10 @@ Thực hiện thay đổi nhỏ nhất có thể để đạt được kết qu�
 - Không reformat toàn bộ file không liên quan.
 - Không tự ý nâng cấp package hoặc thay thế thư viện đang chạy ổn định.
 
+### 1.5. Quyền Hạn Thao Tác File (File Modification & Deletion Policy)
+- **ĐƯỢC PHÉP:** Update, chỉnh sửa nội dung, thêm mới mã nguồn trong các file (`Controllers`, `Views`, `Models`, `wwwroot`, v.v.) để đáp ứng yêu cầu công việc.
+- **TUYỆT ĐỐI CẤM XÓA FILE:** Không được phép xóa bất kỳ file nào hiện có trong dự án (nghiêm cấm chạy các lệnh xóa file như `rm`, `del`, `Remove-Item`, `git rm`, v.v.). Mọi tài nguyên, code cũ, file backup hoặc cấu trúc thư mục hiện có phải được bảo toàn nguyên vẹn.
+
 ---
 
 ## 2. QUY TRÌNH THỰC HIỆN 6 BƯỚC BẮT BUỘC (REQUIRED WORKFLOW)
@@ -187,6 +191,11 @@ Sau khi chỉnh sửa:
 
 ### BƯỚC 5 — BROWSER & RUNTIME VERIFICATION (Kiểm thử trình duyệt)
 Khi có môi trường chạy hoặc kiểm thử giao diện:
+- **Cấu hình khởi chạy và kiểm thử bắt buộc:** Khi chạy test môi trường runtime, **BẮT BUỘC** phải chạy trên giao thức HTTPS tại cổng 5000:
+  ```powershell
+  dotnet run --launch-profile https
+  ```
+  (Địa chỉ ứng dụng bắt buộc: **`https://localhost:5000`**).
 1. **Kiểm tra Layout & Visual:**
    - Cấu trúc trang, spacing, padding, margin, font chữ, màu sắc theo đúng thiết kế Bookle.
    - Kiểm tra hiển thị trên Desktop, Tablet và Mobile (< 768px).
@@ -196,6 +205,8 @@ Khi có môi trường chạy hoặc kiểm thử giao diện:
    - Thử chuyển đổi ngôn ngữ (VI/EN) xem giao diện có cập nhật mượt mà không.
 3. **Console Error Check:**
    - Mở Console kiểm tra: **TUYỆT ĐỐI KHÔNG** có lỗi JS runtime mới (`Uncaught TypeError`, `404 Not Found`, CORS error, v.v.).
+- **Bắt buộc giải phóng cổng sau khi kiểm thử (Mandatory Port Cleanup):**
+  Sau khi hoàn thành các bước kiểm tra runtime trên `https://localhost:5000`, AI Agent **BẮT BUỘC** phải tắt/kill hoàn toàn tiến trình server đang chạy để giải phóng cổng 5000 (và 5001), đảm bảo người dùng có thể tự khởi chạy và kiểm thử lại trên máy của mình mà không bị lỗi xung đột cổng.
 
 ---
 
@@ -214,6 +225,7 @@ Một task CHỈ ĐƯỢC COI LÀ HOÀN THÀNH khi thỏa mãn 100% các tiêu c
 
 ### 1. Mã nguồn & Kiến trúc
 - [ ] Tuân thủ cấu trúc MVC + BFF Proxy ở Mục I.
+- [ ] Được phép update/sửa code nhưng **TUYỆT ĐỐI KHÔNG XÓA BẤT KỲ FILE NÀO**.
 - [ ] Không sửa đổi file vendor gốc trong `assets/` và `book/`.
 - [ ] Tái sử dụng component/class có sẵn của Bookle.
 - [ ] Không có thay đổi kiến trúc hoặc refactor ngoài phạm vi yêu cầu.
@@ -225,6 +237,8 @@ Một task CHỈ ĐƯỢC COI LÀ HOÀN THÀNH khi thỏa mãn 100% các tiêu c
 
 ### 3. Kiểm thử & Chất lượng
 - [ ] Lệnh `dotnet build` hoàn thành với `0 Error(s)`.
+- [ ] Ứng dụng khởi chạy và kiểm thử thành công trên **`https://localhost:5000`**.
+- [ ] Đã tắt tiến trình server và giải phóng cổng 5000/5001 để người dùng tự test lại.
 - [ ] Giao diện responsive tốt trên cả Desktop và Mobile.
 - [ ] Không phát sinh lỗi đỏ mới trong Browser Console.
 

@@ -11,8 +11,8 @@
     var translation = book?.Translations?.FirstOrDefault(t => t.LanguageCode == currentLang)
         ?? book?.Translations?.FirstOrDefault();
     
-    ViewData["Title"] = translation?.Title ?? "SÃ¡ch";
-    var bookTitle = translation?.Title ?? "SÃ¡ch";
+    ViewData["Title"] = translation?.Title ?? "Sách";
+    var bookTitle = translation?.Title ?? "Sách";
     var bookSummary = translation?.Summary ?? "";
     var bookContent = translation?.Content ?? translation?.Description ?? "";
     var bookThumbnail = book?.Thumbnail ?? "";

@@ -3,62 +3,73 @@
     var isHomePage = pageTitle == "Trang chủ" || Context.Request.Path.Value == "/" || Context.Request.Path.Value == "/Home/Index";
 }
 
-<div id="mainSlider" class="heritage-hero carousel slide" data-bs-ride="carousel"
-     data-page-title="@pageTitle"
-     data-is-home-page="@isHomePage.ToString().ToLower()">
-    <div id="sliderLoading" class="text-center py-5" style="min-height:400px;display:flex;align-items:center;justify-content:center;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Đang tải slider...</span>
+
+<!-- Hero Section start  -->
+<div class="hero-section hero-1 fix">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 col-xl-8 col-lg-6">
+                <div class="hero-items">
+                    <div class="book-shape">
+                        <img src="/assets/img/hero/book.png" alt="shape-img">
+                    </div>
+                    <div class="frame-shape1 float-bob-x">
+                        <img src="/assets/img/hero/frame.png" alt="shape-img">
+                    </div>
+                    <div class="frame-shape2 float-bob-y">
+                        <img src="/assets/img/hero/frame-2.png" alt="shape-img">
+                    </div>
+                    <div class="frame-shape3">
+                        <img src="/assets/img/hero/xstar.png" alt="img">
+                    </div>
+                    <div class="frame-shape4 float-bob-x">
+                        <img src="/assets/img/hero/frame-shape.png" alt="img">
+                    </div>
+                    <div class="bg-shape1">
+                        <img src="/assets/img/hero/bg-shape.png" alt="img">
+                    </div>
+                    <div class="bg-shape2">
+                        <img src="/assets/img/hero/bg-shape2.png" alt="shape-img">
+                    </div>
+                    <div class="hero-content">
+                        <h6 class="wow fadeInUp" data-wow-delay=".3s">Up to 30% Off</h6>
+                        <h1 class="wow fadeInUp" data-wow-delay=".5s">
+                            Get Your New Book <br> With The Best Price
+                        </h1>
+                        <div class="form-clt wow fadeInUp" data-wow-delay=".9s">
+                            <button type="submit" class="theme-btn">
+                                Shop Now <i class="fa-solid fa-arrow-right-long"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="col-12 col-xl-4 col-lg-6">
+                <div class="girl-image">
+                    <img class=" float-bob-x" src="/assets/img/hero/hero-girl.png" alt="img">
+                </div>
+            </div>
         </div>
     </div>
-
-    <div class="heritage-hero-overlay" id="heritageHeroOverlay" style="display:none;"></div>
-    <div class="heritage-hero-content" id="heritageHeroContent" style="display:none;">
-        <div>
-            
-            <h1 class="heritage-hero-title" id="heritageHeroTitle">Khám Phá &amp; Trải Nghiệm</h1>
-            <p class="heritage-hero-subtitle" id="heritageHeroSubtitle">Nhanh chóng — Tiện lợi — Đậm chất văn hóa</p>
-            <p class="heritage-hero-desc" id="heritageHeroDesc">Tìm hiểu di tích, danh thắng và dịch vụ du lịch tại một nơi.</p>
-            <div class="heritage-hero-buttons d-none" id="heritageHeroButtons" aria-label="Hành động slider"></div>
-        </div>
-    </div>
-
-    <div id="sliderContent" style="display: none;">
-        <div class="carousel-indicators" id="sliderIndicators"></div>
-        <div class="carousel-inner" id="sliderInner"></div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#mainSlider" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#mainSlider" data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-        </button>
-    </div>
-
-    <div id="sliderFallback" class="heritage-page-banner d-none">
-        <h1 id="sliderFallbackTitle"></h1>
-    </div>
-
-    <div id="sliderEmpty" class="d-none"></div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Wait a bit for menu to load first
         setTimeout(() => {
             loadSliders();
         }, 500);
-        
+
         // Listen for language change events
-        window.addEventListener('languageChanged', function(event) {
+        window.addEventListener('languageChanged', function (event) {
             setTimeout(() => {
                 loadSliders();
             }, 300);
         });
-        
+
         // Listen for menu loaded event (if available)
-        window.addEventListener('menuLoaded', function() {
+        window.addEventListener('menuLoaded', function () {
             loadSliders();
         });
     });
@@ -73,24 +84,24 @@
                 if (menu && menu.translations && menu.translations.length > 0) {
                     // Get current language
                     const langCode = localStorage.getItem('selectedLanguage') || 'vi';
-                    
+
                     // Try to find translation matching current language
-                    let translation = menu.translations.find(t => 
+                    let translation = menu.translations.find(t =>
                         t.languageCode?.toLowerCase() === langCode.toLowerCase()
                     );
-                    
+
                     // If not found, try 2-char prefix match
                     if (!translation) {
-                        translation = menu.translations.find(t => 
+                        translation = menu.translations.find(t =>
                             t.languageCode?.toLowerCase().substring(0, 2) === langCode.toLowerCase().substring(0, 2)
                         );
                     }
-                    
+
                     // Fallback to first translation
                     if (!translation) {
                         translation = menu.translations[0];
                     }
-                    
+
                     if (translation && translation.title) {
                         return translation.title;
                     }
@@ -99,13 +110,13 @@
         } catch (e) {
             // Error getting menu title
         }
-        
+
         // Fallback: try to get from active nav link
         const activeNavLink = document.querySelector('.nav-link.active');
         if (activeNavLink) {
             return activeNavLink.textContent.trim();
         }
-        
+
         // Final fallback: use page title from data attribute
         const sliderElement = document.getElementById('mainSlider');
         return sliderElement?.getAttribute('data-page-title') || document.title.split(' - ')[0] || '';
@@ -201,28 +212,28 @@
 
         // Get current language from localStorage
         let langCode = localStorage.getItem('selectedLanguage') || 'vi';
-        
+
         // Get menu title and check if it's home page
         const menuTitle = getCurrentMenuTitle();
-        const isHomePage = window.location.pathname === '/' || 
-                          window.location.pathname === '/Home/Index' ||
-                          window.location.pathname.toLowerCase() === '/home';
+        const isHomePage = window.location.pathname === '/' ||
+            window.location.pathname === '/Home/Index' ||
+            window.location.pathname.toLowerCase() === '/home';
 
         try {
             // Fetch all active sliders (API doesn't accept langCode parameter)
             let response = await fetch('/api/Portal/sliders/active');
-            
+
             if (!response.ok) {
                 throw new Error('Failed to load sliders');
             }
 
             let data = await response.json();
-            
+
             // Hide loading indicator
             loadingIndicator.style.display = 'none';
 
             let sliderItems = [];
-            
+
             // Handle different response structures and filter by name "MainSlider" (case-insensitive)
             if (Array.isArray(data)) {
                 // If response is an array, filter by name "MainSlider" (lowercase comparison)
@@ -230,7 +241,7 @@
                     const sliderName = (slider.name || slider.sliderName || slider.code || '').toString().toLowerCase().trim();
                     return sliderName === 'mainslider';
                 });
-                
+
                 if (mainSlider) {
                     // If slider has items property, use it
                     if (mainSlider.items && Array.isArray(mainSlider.items)) {
@@ -299,7 +310,7 @@
                 const translation = pickSliderTranslation(slider, langCode);
                 const title = translation?.title || translation?.name || '';
                 const imageUrl = translation?.image || translation?.imageUrl || translation?.thumbnail ||
-                                slider.image || slider.imageUrl || slider.thumbnail || '';
+                    slider.image || slider.imageUrl || slider.thumbnail || '';
                 const isActive = index === 0 ? 'active' : '';
 
                 // Create indicator
@@ -317,18 +328,18 @@
                 // Create carousel item
                 const carouselItem = document.createElement('div');
                 carouselItem.className = `carousel-item ${isActive}`;
-                
+
                 let itemContent = '';
-                
+
                 // Add image or placeholder
                 if (imageUrl) {
                     itemContent += `<img src="${imageUrl}" alt="${title}" class="d-block w-100" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
                 }
-                
+
                 // Add placeholder if no image
                 itemContent += `<div class="slider-placeholder" style="display: ${imageUrl ? 'none' : 'flex'}; width: 100%; height: 100%; align-items: center; justify-content: center; background: linear-gradient(135deg, #00182d 0%, #0a4d8c 100%); color: white; font-size: 24px; font-weight: bold;">
-                    ${title || 'Slider ' + (index + 1)}
-                </div>`;
+                        ${title || 'Slider ' + (index + 1)}
+                    </div>`;
 
                 carouselItem.innerHTML = itemContent;
                 sliderInner.appendChild(carouselItem);
@@ -366,7 +377,7 @@
                     if (existingCarousel) {
                         existingCarousel.dispose();
                     }
-                    
+
                     // Initialize new carousel
                     const carousel = new bootstrap.Carousel(carouselElement, {
                         interval: 5000, // Auto-rotate every 5 seconds
@@ -378,7 +389,7 @@
 
         } catch (error) {
             loadingIndicator.style.display = 'none';
-            
+
             // On error, show fallback if not home page
             if (!isHomePage && menuTitle) {
                 const fallbackTitle = document.querySelector('#sliderFallbackTitle');

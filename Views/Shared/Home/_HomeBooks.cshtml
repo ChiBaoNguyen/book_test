@@ -1,0 +1,1254 @@
+﻿    <!-- Shop Section Start -->
+<style>
+    /* Category tabs on the home-book section only. */
+    .home-books-wrapper .main-sidebar { margin-top: 30px; }
+    .home-books-wrapper .home-books-tabs-slider { position: relative; display: flex; align-items: center; gap: 12px; }
+    .home-books-wrapper .home-books-tabs-viewport { flex: 1 1 auto; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; }
+    .home-books-wrapper .home-books-tabs-viewport::-webkit-scrollbar { display: none; }
+    .home-books-wrapper .home-books-tabs { display: flex !important; flex-wrap: nowrap; gap: 12px; margin-bottom: 0 !important; }
+    .home-books-wrapper .home-books-tabs .nav-item { flex: 0 0 auto; }
+    .home-books-wrapper .home-books-tabs .nav-item .nav-link { justify-content: center; width: auto !important; min-width: 150px; min-height: 54px; margin-bottom: 0 !important; padding: 12px 18px !important; border: 1px solid #dce5eb; border-radius: 999px; background: #f6f9fb; font-weight: 600; line-height: 1.35; text-align: center; white-space: nowrap; transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+    .home-books-wrapper .home-books-tabs .nav-item .nav-link:hover, .home-books-wrapper .home-books-tabs .nav-item .nav-link.active { border-color: var(--theme2); box-shadow: 0 6px 16px rgba(1, 46, 74, .16); transform: translateY(-2px); }
+    .home-books-wrapper .home-books-tabs-arrow { flex: 0 0 44px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #dce5eb; border-radius: 50%; background: var(--white); color: var(--header); box-shadow: 0 6px 16px rgba(1, 46, 74, .1); transition: background-color .2s ease, border-color .2s ease, color .2s ease, opacity .2s ease; }
+    .home-books-wrapper .home-books-tabs-arrow:hover:not(:disabled) { border-color: var(--theme2); background: var(--theme2); color: var(--white); }
+    .home-books-wrapper .home-books-tabs-arrow:disabled { cursor: not-allowed; opacity: .35; box-shadow: none; }
+    .home-books-wrapper--api-loading [data-home-books-categories] > .nav-item:not(.home-books-api-state),
+    .home-books-wrapper--api-loading [data-home-books-content] > .tab-pane:not(.home-books-api-state) { display: none !important; }
+
+    @@media (max-width: 767.98px) {
+        .home-books-wrapper .home-books-tabs-slider { gap: 8px; }
+        .home-books-wrapper .home-books-tabs-viewport { padding: 2px 0 10px; scrollbar-width: thin; }
+        .home-books-wrapper .home-books-tabs-viewport::-webkit-scrollbar { display: block; height: 4px; }
+        .home-books-wrapper .home-books-tabs-arrow { flex-basis: 38px; width: 38px; height: 38px; }
+        .home-books-wrapper .home-books-tabs .nav-item .nav-link { min-width: max-content; }
+    }
+</style>
+
+<section class="shop-section fix section-padding">
+    <div class="container">
+        <div class="shop-default-wrapper home-books-wrapper home-books-wrapper--api-loading">
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 order-2 order-md-1 wow fadeInUp" data-wow-delay=".3s">
+                    <div class="main-sidebar">
+                        <div class="single-sidebar-widget">
+                            <div class="wid-title">
+                                <h5>Categories</h5>
+                            </div>
+                            <div class="categories-list">
+                                <div class="home-books-tabs-slider" data-home-books-tabs-slider>
+                                    <button class="home-books-tabs-arrow home-books-tabs-prev" type="button" aria-label="Previous categories">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <div class="home-books-tabs-viewport">
+                                        <ul class="nav nav-pills home-books-tabs" id="pills-tab" role="tablist" data-home-books-categories>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link active" id="pills-arts-tab" data-bs-toggle="pill"
+                                                        data-bs-target="#pills-arts" type="button" role="tab"
+                                                        aria-controls="pills-arts" aria-selected="true">
+                                                    Arts &
+                                                    Photography
+                                                </button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="pills-Biographies-tab" data-bs-toggle="pill"
+                                                        data-bs-target="#pills-Biographies" type="button" role="tab"
+                                                        aria-controls="pills-Biographies" aria-selected="false">
+                                                    Biographies &
+                                                    Memoirs
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <button class="home-books-tabs-arrow home-books-tabs-next" type="button" aria-label="Next categories">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-12 col-lg-12 order-1 order-md-2">
+                    <div class="tab-content" id="pills-tabContent" data-home-books-content>
+                        <div class="tab-pane fade show active" id="pills-arts" role="tabpanel"
+                             aria-labelledby="pills-arts-tab" tabindex="0">
+                            <div class="row">
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details.html"><img src="assets/img/book/01.png" alt="img"></a>
+                                            <ul class="post-box">
+                                                <li>
+                                                    Hot
+                                                </li>
+                                                <li>
+                                                    -30%
+                                                </li>
+                                            </ul>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Simple Things You Save BOOK</a></h3>
+                                            <ul class="price-list">
+                                                <li>$30.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/02.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">How Deal With Very Bad BOOK</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".6s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/03.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">The Hidden Mystery Behind</a></h3>
+                                            <ul class="price-list">
+                                                <li>
+                                                    $30.00
+                                                    <del>$39.99</del>
+                                                </li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".8s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/04.png" alt="img"></a>
+                                            <ul class="post-box">
+                                                <li>
+                                                    -12%
+                                                </li>
+                                            </ul>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Qple GPad With Retina Sisplay</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/05.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Flovely and Unicom Erna</a></h3>
+                                            <ul class="price-list">
+                                                <li>$19.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/04.png" alt="img"></a>
+                                            <ul class="post-box">
+                                                <li>
+                                                    -12%
+                                                </li>
+                                            </ul>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Qple GPad With Retina Sisplay</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".6s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/02.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">How Deal With Very Bad BOOK</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".8s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/06.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Castle In The Sky</a></h3>
+                                            <ul class="price-list">
+                                                <li>$16.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/06.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Castle In The Sky</a></h3>
+                                            <ul class="price-list">
+                                                <li>$16.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/02.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">How Deal With Very Bad BOOK</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".6s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/03.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">The Hidden Mystery Behind</a></h3>
+                                            <ul class="price-list">
+                                                <li>$30.00 <del>$39.99</del></li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".8s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/05.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Flovely and Unicom Erna</a></h3>
+                                            <ul class="price-list">
+                                                <li>$19.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="pills-Biographies" role="tabpanel"
+                             aria-labelledby="pills-Biographies-tab" tabindex="0">
+                            <div class="row">
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/01.png" alt="img"></a>
+                                            <ul class="post-box">
+                                                <li>
+                                                    Hot
+                                                </li>
+                                                <li>
+                                                    -30%
+                                                </li>
+                                            </ul>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Simple Things You Save BOOK</a></h3>
+                                            <ul class="price-list">
+                                                <li>$30.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/02.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">How Deal With Very Bad BOOK</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".6s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/03.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">The Hidden Mystery Behind</a></h3>
+                                            <ul class="price-list">
+                                                <li>
+                                                    $30.00
+                                                    <del>$39.99</del>
+                                                </li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".8s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/04.png" alt="img"></a>
+                                            <ul class="post-box">
+                                                <li>
+                                                    -12%
+                                                </li>
+                                            </ul>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Qple GPad With Retina Sisplay</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/05.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Flovely and Unicom Erna</a></h3>
+                                            <ul class="price-list">
+                                                <li>$19.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/04.png" alt="img"></a>
+                                            <ul class="post-box">
+                                                <li>
+                                                    -12%
+                                                </li>
+                                            </ul>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Qple GPad With Retina Sisplay</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".6s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/02.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">How Deal With Very Bad BOOK</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".8s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/06.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Castle In The Sky</a></h3>
+                                            <ul class="price-list">
+                                                <li>$16.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/06.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Castle In The Sky</a></h3>
+                                            <ul class="price-list">
+                                                <li>$16.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/02.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">How Deal With Very Bad BOOK</a></h3>
+                                            <ul class="price-list">
+                                                <li>$39.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".6s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/03.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">The Hidden Mystery Behind</a></h3>
+                                            <ul class="price-list">
+                                                <li>$30.00 <del>$39.99</del></li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".8s">
+                                    <div class="shop-box-items">
+                                        <div class="book-thumb center">
+                                            <a href="shop-details-2.html"><img src="assets/img/book/05.png" alt="img"></a>
+                                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                                <li>
+                                                    <a href="shop-cart.html"><i class="far fa-heart"></i></a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-cart.html">
+                                                        <img class="icon" src="assets/img/icon/shuffle.svg"
+                                                             alt="svg-icon">
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="shop-details.html"><i class="far fa-eye"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="shop-content">
+                                            <h3><a href="shop-details.html">Flovely and Unicom Erna</a></h3>
+                                            <ul class="price-list">
+                                                <li>$19.00</li>
+                                                <li>
+                                                    <i class="fa-solid fa-star"></i>
+                                                    3.4 (25)
+                                                </li>
+                                            </ul>
+                                            <div class="shop-button">
+                                                <a href="shop-details.html" class="theme-btn">
+                                                    <i class="fa-solid fa-basket-shopping"></i> Add To Cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (() => {
+        const API_CATEGORIES_URL = '/api/Portal/categories';
+        const API_BOOKS_URL = '/api/Portal/books';
+        const PAGE_SIZE = 8;
+
+        const slider = document.querySelector('[data-home-books-tabs-slider]');
+        const tabsList = document.querySelector('[data-home-books-categories]');
+        const content = document.querySelector('[data-home-books-content]');
+
+        if (!slider || !tabsList || !content) return;
+
+        const wrapper = slider.closest('.home-books-wrapper');
+        const viewport = slider.querySelector('.home-books-tabs-viewport');
+        const prevButton = slider.querySelector('.home-books-tabs-prev');
+        const nextButton = slider.querySelector('.home-books-tabs-next');
+        const loadedCategories = new Set();
+
+        if (!viewport || !prevButton || !nextButton) return;
+
+        const getLangCode = () => (localStorage.getItem('selectedLanguage') || 'vi').toLowerCase();
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        const renderStatus = (message, isLoading = false) => {
+            wrapper?.classList.add('home-books-wrapper--api-loading');
+            tabsList.innerHTML = isLoading
+                ? '<li class="nav-item home-books-api-state" role="presentation"><button class="nav-link active" type="button" disabled>Đang tải...</button></li>'
+                : '';
+            content.innerHTML = `
+                <div class="tab-pane fade show active home-books-api-state" role="tabpanel" tabindex="0">
+                    <div class="row">
+                        <div class="col-12">
+                            <p class="mb-0 text-muted">${escapeHtml(message)}</p>
+                        </div>
+                    </div>
+                </div>`;
+            updateButtons();
+        };
+
+        const stripHtml = (value) => {
+            const temp = document.createElement('div');
+            temp.innerHTML = String(value ?? '');
+            return temp.textContent || temp.innerText || '';
+        };
+
+        const getItems = (payload) => {
+            if (Array.isArray(payload)) return payload;
+            return payload?.items || payload?.Items || payload?.data || payload?.Data || [];
+        };
+
+        const pickTranslation = (item, langCode) => {
+            const translations = item?.translations || item?.Translations || [];
+            if (!Array.isArray(translations) || !translations.length) return null;
+
+            return translations.find(t => String(t.languageCode || t.LanguageCode || '').toLowerCase() === langCode)
+                || translations.find(t => String(t.languageCode || t.LanguageCode || '').toLowerCase().slice(0, 2) === langCode.slice(0, 2))
+                || translations[0];
+        };
+
+        const categoryId = (category) => category?.id || category?.Id || category?.categoryId || category?.CategoryId
+            || category?.value || category?.Value || category?.code || category?.Code || '';
+
+        const categoryName = (category, langCode) => {
+            const translation = pickTranslation(category, langCode);
+            return translation?.name || translation?.Name || translation?.title || translation?.Title
+                || category?.name || category?.Name || category?.title || category?.Title
+                || category?.categoryName || category?.CategoryName || category?.code || category?.Code || '';
+        };
+
+        const normalizeCategories = (payload, langCode) => getItems(payload)
+            .map(category => ({
+                id: String(categoryId(category)).trim(),
+                name: String(categoryName(category, langCode)).trim()
+            }))
+            .filter(category => category.id && category.name);
+
+        const paneId = (id, index) => `home-books-category-${index}-${String(id).replace(/[^a-zA-Z0-9_-]/g, '') || 'item'}`;
+
+        const updateButtons = () => {
+            const maxScrollLeft = viewport.scrollWidth - viewport.clientWidth;
+            const hasOverflow = maxScrollLeft > 1;
+
+            prevButton.hidden = !hasOverflow;
+            nextButton.hidden = !hasOverflow;
+            prevButton.disabled = viewport.scrollLeft <= 1;
+            nextButton.disabled = viewport.scrollLeft >= maxScrollLeft - 1;
+        };
+
+        const scrollTabs = (direction) => {
+            viewport.scrollBy({
+                left: direction * Math.max(260, viewport.clientWidth * .75),
+                behavior: 'smooth'
+            });
+        };
+
+        const bindTabs = () => {
+            tabsList.querySelectorAll('.nav-link').forEach((tab) => {
+                if (tab.dataset.homeBooksBound === '1') return;
+
+                tab.dataset.homeBooksBound = '1';
+                tab.addEventListener('shown.bs.tab', () => {
+                    tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+
+                    const id = tab.dataset.categoryId;
+                    const target = tab.getAttribute('data-bs-target');
+                    if (id && target) {
+                        loadBooksByCategory(id, target);
+                    }
+                });
+            });
+
+            updateButtons();
+        };
+
+        const renderCategories = (categories) => {
+            loadedCategories.clear();
+            wrapper?.classList.remove('home-books-wrapper--api-loading');
+
+            tabsList.innerHTML = categories.map((category, index) => {
+                const targetId = paneId(category.id, index);
+                const activeClass = index === 0 ? ' active' : '';
+                const selected = index === 0 ? 'true' : 'false';
+
+                return `
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link${activeClass}" id="${targetId}-tab" data-bs-toggle="pill"
+                                data-bs-target="#${targetId}" data-category-id="${escapeHtml(category.id)}"
+                                type="button" role="tab" aria-controls="${targetId}" aria-selected="${selected}">
+                            ${escapeHtml(category.name)}
+                        </button>
+                    </li>`;
+            }).join('');
+
+            content.innerHTML = categories.map((category, index) => {
+                const targetId = paneId(category.id, index);
+                const activeClass = index === 0 ? ' show active' : '';
+
+                return `
+                    <div class="tab-pane fade${activeClass}" id="${targetId}" role="tabpanel"
+                         aria-labelledby="${targetId}-tab" tabindex="0">
+                        <div class="row" data-home-books-list="${escapeHtml(category.id)}">
+                            <div class="col-12">
+                                <p class="mb-0 text-muted">Đang tải sách...</p>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            bindTabs();
+            loadBooksByCategory(categories[0].id, `#${paneId(categories[0].id, 0)}`);
+        };
+
+        const bookTranslation = (book, langCode) => pickTranslation(book, langCode) || {};
+
+        const bookLink = (translation) => {
+            const slug = translation?.urlSlug || translation?.UrlSlug || '';
+            return `/book/${encodeURIComponent(slug || 'book')}`;
+        };
+
+        const renderBookCard = (book, langCode) => {
+            const translation = bookTranslation(book, langCode);
+            const title = translation?.title || translation?.Title || book?.title || book?.Title || 'Book';
+            const summary = stripHtml(translation?.summary || translation?.Summary || translation?.description || translation?.Description || '');
+            const thumbnail = book?.thumbnail || book?.Thumbnail || '/assets/img/book/01.png';
+            const author = book?.author || book?.Author || '';
+            const link = bookLink(translation);
+
+            return `
+                <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp">
+                    <div class="shop-box-items">
+                        <div class="book-thumb center">
+                            <a href="${escapeHtml(link)}">
+                                <img src="${escapeHtml(thumbnail)}" alt="${escapeHtml(title)}" loading="lazy"
+                                     onerror="this.src='/assets/img/book/01.png'">
+                            </a>
+                            <ul class="shop-icon d-grid justify-content-center align-items-center">
+                                <li><a href="${escapeHtml(link)}"><i class="far fa-eye"></i></a></li>
+                            </ul>
+                        </div>
+                        <div class="shop-content">
+                            ${author ? `<p class="mb-1 text-muted">${escapeHtml(author)}</p>` : ''}
+                            <h3><a href="${escapeHtml(link)}">${escapeHtml(title)}</a></h3>
+                            ${summary ? `<p class="mb-3">${escapeHtml(summary.substring(0, 90))}${summary.length > 90 ? '...' : ''}</p>` : ''}
+                            <div class="shop-button">
+                                <a href="${escapeHtml(link)}" class="theme-btn">
+                                    <i class="fa-solid fa-book-open"></i> Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        };
+
+        async function loadBooksByCategory(categoryId, targetSelector) {
+            if (loadedCategories.has(categoryId)) return;
+
+            const pane = content.querySelector(targetSelector);
+            const list = pane?.querySelector('[data-home-books-list]');
+            if (!list) return;
+
+            loadedCategories.add(categoryId);
+
+            try {
+                const url = `${API_BOOKS_URL}?categoryId=${encodeURIComponent(categoryId)}&pageNumber=1&pageSize=${PAGE_SIZE}`;
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+
+                if (!response.ok) throw new Error('Cannot load books');
+
+                const langCode = getLangCode();
+                const books = getItems(await response.json())
+                    .filter(book => (book?.published ?? book?.Published ?? true))
+                    .slice(0, PAGE_SIZE);
+
+                list.innerHTML = books.length
+                    ? books.map(book => renderBookCard(book, langCode)).join('')
+                    : '<div class="col-12"><p class="mb-0 text-muted">Chưa có sách trong danh mục này.</p></div>';
+            } catch (error) {
+                loadedCategories.delete(categoryId);
+                list.innerHTML = '<div class="col-12"><p class="mb-0 text-muted">Không tải được sách cho danh mục này.</p></div>';
+            }
+        }
+
+        async function loadHomeBookCategories() {
+            renderStatus('Đang tải danh mục...', true);
+
+            try {
+                const langCode = getLangCode();
+                const response = await fetch(`${API_CATEGORIES_URL}?langCode=${encodeURIComponent(langCode)}`, {
+                    headers: { Accept: 'application/json' }
+                });
+
+                if (!response.ok) throw new Error('Cannot load categories');
+
+                const categories = normalizeCategories(await response.json(), langCode);
+                if (!categories.length) {
+                    renderStatus('Chưa có danh mục sách.');
+                    return;
+                }
+
+                renderCategories(categories);
+            } catch (error) {
+                renderStatus('Không tải được danh mục từ API.');
+            }
+        }
+
+        prevButton.addEventListener('click', () => scrollTabs(-1));
+        nextButton.addEventListener('click', () => scrollTabs(1));
+        viewport.addEventListener('scroll', updateButtons, { passive: true });
+        window.addEventListener('resize', updateButtons);
+        window.addEventListener('languageChanged', loadHomeBookCategories);
+
+        loadHomeBookCategories();
+    })();
+</script>
